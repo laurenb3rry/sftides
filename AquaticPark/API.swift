@@ -17,11 +17,16 @@ enum API {
     static let currentStation = "SFB1203"
     static let currentBin = 18
 
-    /// 9414290 has no water temperature sensor, so this reads Point Reyes instead.
-    /// ponytail: open-ocean proxy — runs a few degrees colder than the cove, which
-    /// sits behind Municipal Pier and warms in the sun. Swap the station or apply
-    /// an offset once there are enough real swim readings to calibrate against.
-    static let waterTempStation = "9415020"
+    /// 9414290's water temperature sensor is offline (mdapi reports `status: 0`),
+    /// so this reads Richmond — the nearest in-bay station with a live sensor and
+    /// 99.9% uptime over the last 30 days.
+    /// ponytail: in-bay proxy 8.4 mi away. Aquatic Park pulls two ways against it —
+    /// colder ocean inflow at the Gate, warmer sheltered cove behind Municipal Pier.
+    /// Tune `waterTempOffset` once there are enough real swim readings to calibrate.
+    static let waterTempStation = "9414863"
+
+    /// Degrees F added to the station reading. Zero until calibrated.
+    static let waterTempOffset = 0.0
     static let latitude = 37.8077
     static let longitude = -122.4230
 
@@ -61,7 +66,8 @@ enum API {
         guard let row = try await get(url, as: WaterTempResponse.self).data.first else {
             throw APIError.noaa("No water temperature reported")
         }
-        return WaterTempReading(time: try noaaDate(row.t), temperature: try number(row.v))
+        return WaterTempReading(time: try noaaDate(row.t),
+                                temperature: try number(row.v) + waterTempOffset)
     }
 
     // MARK: - Currents
