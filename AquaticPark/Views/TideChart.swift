@@ -2,18 +2,19 @@ import SwiftUI
 
 struct TideChart: View {
     let curve: [TideSample]
+    let slacks: [SlackWindow]
     let window: (start: Date, end: Date)
+    let showsDayLines: Bool
     let now: Date
     @Binding var marker: Date
 
-    private let canvasHeight: CGFloat = 166
-    private let axisHeight: CGFloat = 18
-    /// Keeps the curve and the r=6 marker dot clear of the top and bottom edges.
-    private let inset: CGFloat = 14
+    private let canvasHeight: CGFloat = 152
+    private let axisHeight: CGFloat = 16
+    /// Keeps the curve and the r=5.5 marker dot clear of the top and bottom edges.
+    private let inset: CGFloat = 13
 
     var body: some View {
         VStack(spacing: 0) {
-            label
             GeometryReader { geometry in
                 let width = geometry.size.width
                 plot(width: width)
@@ -26,51 +27,41 @@ struct TideChart: View {
         }
     }
 
-    // MARK: - Section label (§5.3)
-
-    private var label: some View {
-        HStack {
-            Text("72H PHASE SCHEMATIC")
-                .foregroundStyle(Theme.inkMuted)
-            Spacer()
-            Text(stateWord)
-                .foregroundStyle(Theme.blue)
-        }
-        .font(.system(.caption2, design: .monospaced))
-        .tracking(0.9)
-        .padding(.top, 18)
-        .padding(.horizontal, 22)
-        .padding(.bottom, 6)
-    }
-
-    private var stateWord: String {
-        guard let rising = Conditions.isRising(at: marker, in: curve) else { return "—" }
-        return rising ? "RISING" : "FALLING"
-    }
-
     // MARK: - Plot
 
     private func plot(width: CGFloat) -> some View {
         let range = heightRange
 
         return ZStack(alignment: .topLeading) {
-            // Three gridlines at even divisions of the plot height.
-            ForEach(1..<4) { division in
-                line(from: CGPoint(x: 0, y: canvasHeight * CGFloat(division) / 4),
-                     to: CGPoint(x: width, y: canvasHeight * CGFloat(division) / 4))
+            // Two gridlines at even divisions of the plot height.
+            ForEach(1..<3) { division in
+                line(from: CGPoint(x: 0, y: canvasHeight * CGFloat(division) / 3),
+                     to: CGPoint(x: width, y: canvasHeight * CGFloat(division) / 3))
                     .stroke(Theme.hairline, lineWidth: 1)
             }
 
-            // Local midnight on the two interior day boundaries.
-            ForEach(1..<3) { day in
-                let x = self.x(for: dayBoundary(day), in: width)
-                line(from: CGPoint(x: x, y: 0), to: CGPoint(x: x, y: canvasHeight))
-                    .stroke(Theme.rule, lineWidth: 1)
+            // Slack windows, full plot height.
+            ForEach(visibleSlacks) { slack in
+                let start = x(for: max(slack.start, window.start), in: width)
+                let end = x(for: min(slack.end, window.end), in: width)
+                Rectangle()
+                    .fill(Theme.blue.opacity(0.07))
+                    .frame(width: max(end - start, 1), height: canvasHeight)
+                    .offset(x: start)
+            }
+
+            // Local midnight on the interior day boundaries — 72H only.
+            if showsDayLines {
+                ForEach(1..<3) { day in
+                    let x = self.x(for: dayBoundary(day), in: width)
+                    line(from: CGPoint(x: x, y: 0), to: CGPoint(x: x, y: canvasHeight))
+                        .stroke(Theme.rule, lineWidth: 1)
+                }
             }
 
             curvePath(width: width, range: range)
                 .stroke(Theme.blue,
-                        style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+                        style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
 
             markerLine(width: width, range: range)
         }
@@ -87,7 +78,7 @@ struct TideChart: View {
     }
 
     /// Hidden until there is a curve to sit on — with no data the canvas shows
-    /// gridlines and day lines only (§5.8).
+    /// gridlines only (§5.8).
     @ViewBuilder
     private func markerLine(width: CGFloat, range: (low: Double, high: Double)) -> some View {
         if !visibleCurve.isEmpty {
@@ -99,7 +90,7 @@ struct TideChart: View {
             if let height = Conditions.height(at: marker, in: curve) {
                 Circle()
                     .fill(Theme.blue)
-                    .frame(width: 12, height: 12)
+                    .frame(width: 11, height: 11)
                     .position(x: x, y: y(for: height, range: range))
             }
         }
@@ -109,24 +100,51 @@ struct TideChart: View {
         Path { $0.move(to: start); $0.addLine(to: end) }
     }
 
-    // MARK: - Axis (§5.3)
+    // MARK: - Axis
 
+    /// Three labels: the window ends, and `SLACK` under the band nearest the marker.
+    /// `SLACK` is anchored to its band, so an end label it would land on top of is
+    /// dropped rather than overprinted — the band is the label that matters.
     private var axis: some View {
         GeometryReader { geometry in
+            let width = geometry.size.width
+            let start = Self.stamp.string(from: window.start).uppercased()
+            let end = Self.stamp.string(from: window.end).uppercased()
+            let slackX = nearestSlack.map { x(for: centre(of: $0), in: width) }
+            let reach = textWidth("SLACK") / 2 + 8
+
             ZStack(alignment: .topLeading) {
-                ForEach(0..<3) { day in
-                    Text(dayLabel(day))
-                        .foregroundStyle(Theme.inkFaint)
-                        .offset(x: x(for: dayBoundary(day), in: geometry.size.width))
+                HStack {
+                    if clear(slackX, of: 22 + textWidth(start) + reach, from: .leading, width) {
+                        Text(start)
+                    }
+                    Spacer(minLength: 8)
+                    if clear(slackX, of: 22 + textWidth(end) + reach, from: .trailing, width) {
+                        Text(end)
+                    }
                 }
-                // Anchored to real now, so it stays put while the marker is dragged.
-                Text("NOW")
-                    .foregroundStyle(Theme.blue)
-                    .position(x: x(for: now, in: geometry.size.width), y: axisHeight / 2)
+                .foregroundStyle(Theme.inkFaint)
+                .padding(.horizontal, 22)
+
+                if let slackX {
+                    Text("SLACK")
+                        .foregroundStyle(Theme.blue)
+                        .position(x: slackX, y: axisHeight / 2)
+                }
             }
-            .font(.system(size: 9.5, design: .monospaced))
+            .font(.system(size: 9, design: .monospaced))
+            .monospacedDigit()
         }
         .frame(height: axisHeight)
+    }
+
+    /// SF Mono advance is 0.6em, so a monospaced run measures without a text pass.
+    private func textWidth(_ text: String) -> CGFloat { CGFloat(text.count) * 9 * 0.6 }
+
+    private func clear(_ slackX: CGFloat?, of extent: CGFloat,
+                       from edge: HorizontalEdge, _ width: CGFloat) -> Bool {
+        guard let slackX else { return true }
+        return edge == .leading ? slackX > extent : slackX < width - extent
     }
 
     // MARK: - Gestures (§5.3)
@@ -149,6 +167,21 @@ struct TideChart: View {
 
     private var visibleCurve: [TideSample] {
         curve.filter { $0.time >= window.start && $0.time <= window.end }
+    }
+
+    private var visibleSlacks: [SlackWindow] {
+        slacks.filter { $0.end >= window.start && $0.start <= window.end }
+    }
+
+    private var nearestSlack: SlackWindow? {
+        visibleSlacks.min {
+            abs(centre(of: $0).timeIntervalSince(marker))
+                < abs(centre(of: $1).timeIntervalSince(marker))
+        }
+    }
+
+    private func centre(of slack: SlackWindow) -> Date {
+        slack.start.addingTimeInterval(slack.end.timeIntervalSince(slack.start) / 2)
     }
 
     private var heightRange: (low: Double, high: Double) {
@@ -180,15 +213,11 @@ struct TideChart: View {
         window.start.addingTimeInterval(Double(day) * 86_400)
     }
 
-    private func dayLabel(_ day: Int) -> String {
-        Self.dayFormatter.string(from: dayBoundary(day)).uppercased()
-    }
-
-    private static let dayFormatter: DateFormatter = {
+    private static let stamp: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = API.zone
-        formatter.dateFormat = "EEE"
+        formatter.dateFormat = "EEE h:mm a"
         return formatter
     }()
 }

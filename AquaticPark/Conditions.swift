@@ -225,7 +225,7 @@ enum Conditions {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = API.zone
-        formatter.dateFormat = "HH:mm"
+        formatter.dateFormat = "h:mm a"
         return formatter
     }()
 }

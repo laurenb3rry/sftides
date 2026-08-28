@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The four-across strip (§5.5). Everything reads at the marker except the water
-/// temperature, which NOAA observes but does not forecast — see `waterEstimated`.
+/// State A — four equal columns, no dividers, no borders. Everything reads at the
+/// marker except the water temperature, which NOAA observes but does not forecast —
+/// see `waterEstimated`.
 struct ConditionsStrip: View {
     let water: Double?
     /// Marker is more than an hour ahead of now, so the water reading is the last
@@ -10,52 +11,37 @@ struct ConditionsStrip: View {
     let weather: WeatherHour?
 
     var body: some View {
-        WeightedRow(weights: [1, 0.8, 1, 0.9]) {
-            cell("WATER", leading: 16, divider: false) { waterValue }
-            cell("AIR", leading: 14, divider: true) { airValue }
-            cell("WIND", leading: 14, divider: true) { windValue }
-            cell("UV \(uvIndex)", leading: 14, divider: true) { glyph }
+        HStack(spacing: 0) {
+            column("WATER") { waterValue }
+            column("AIR") { airValue }
+            column("WIND") { windValue }
+            column("UV \(uvIndex)") { glyph }
         }
+        .padding(.horizontal, 14)
+        .padding(.bottom, 34)
     }
 
-    // MARK: - Cells
+    // MARK: - Columns
 
-    private func cell(_ label: String, leading: CGFloat, divider: Bool,
-                      @ViewBuilder value: () -> some View) -> some View {
-        HStack(spacing: 0) {
-            if divider {
-                Rectangle()
-                    .fill(Theme.rule)
-                    .frame(width: 1)
-                    .frame(maxHeight: .infinity)
-            }
-            VStack(alignment: .leading, spacing: 5) {
-                Text(label)
-                    .font(.system(size: 9.5, design: .monospaced))
-                    .tracking(0.76)
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.inkMuted)
-                value()
-            }
-            .padding(.leading, leading)
-            .padding(.vertical, 16)
-            Spacer(minLength: 0)
+    private func column(_ label: String, @ViewBuilder value: () -> some View) -> some View {
+        VStack(spacing: 7) {
+            Text(label)
+                .font(.system(size: 9, design: .monospaced))
+                .tracking(0.72)
+                .monospacedDigit()
+                .foregroundStyle(Theme.inkMuted)
+            value()
         }
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder private var waterValue: some View {
         if let water {
-            HStack(alignment: .lastTextBaseline, spacing: 5) {
-                Text(String(format: waterEstimated ? "~%.1f°" : "%.1f°", water))
-                    .font(.system(size: 20))
-                    .monospacedDigit()
-                    .foregroundStyle(waterEstimated ? Theme.inkMuted : Theme.ink)
-                if waterEstimated {
-                    Text("EST")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(Theme.inkFaint)
-                }
-            }
+            // The `~` and the muted ink carry the estimate; no `EST` label.
+            Text(String(format: waterEstimated ? "~%.1f°" : "%.1f°", water))
+                .font(.system(size: 18, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(waterEstimated ? Theme.inkMuted : Theme.ink)
         } else {
             missing
         }
@@ -71,10 +57,10 @@ struct ConditionsStrip: View {
 
     @ViewBuilder private var windValue: some View {
         if let weather {
-            HStack(alignment: .lastTextBaseline, spacing: 5) {
+            HStack(alignment: .lastTextBaseline, spacing: 4) {
                 value("\(Int(weather.windSpeed.rounded()))")
                 Text(heading(weather.windDirection))
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(size: 9.5, design: .monospaced))
                     .foregroundStyle(Theme.inkMuted)
             }
         } else {
@@ -82,11 +68,11 @@ struct ConditionsStrip: View {
         }
     }
 
-    /// Glyph only, no text — the UV number rides in this cell's label instead.
+    /// Glyph only, no text — the UV number rides in this column's label instead.
     @ViewBuilder private var glyph: some View {
         if let name = weather.flatMap({ symbol(for: $0.weatherCode) }) {
             Image(systemName: name)
-                .font(.system(size: 23))
+                .font(.system(size: 20))
                 .symbolRenderingMode(.monochrome)
                 .foregroundStyle(Theme.ink)
         } else {
@@ -96,7 +82,7 @@ struct ConditionsStrip: View {
 
     private func value(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 20))
+            .font(.system(size: 18, design: .monospaced))
             .monospacedDigit()
             .foregroundStyle(Theme.ink)
     }
@@ -126,30 +112,6 @@ struct ConditionsStrip: View {
         case 71...77, 85, 86: "cloud.snow"
         case 95...99: "cloud.bolt.rain"
         default: nil
-        }
-    }
-}
-
-/// `HStack` has no notion of flex weights, so the §5.5 ratios need a layout of
-/// their own. Height is the tallest cell; each cell is offered the full height so
-/// its leading divider can span the strip.
-private struct WeightedRow: Layout {
-    let weights: [CGFloat]
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        CGSize(width: proposal.replacingUnspecifiedDimensions().width,
-               height: subviews.map { $0.sizeThatFits(.unspecified).height }.max() ?? 0)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize,
-                       subviews: Subviews, cache: inout ()) {
-        let total = weights.reduce(0, +)
-        var x = bounds.minX
-        for (subview, weight) in zip(subviews, weights) {
-            let width = bounds.width * weight / total
-            subview.place(at: CGPoint(x: x, y: bounds.minY),
-                          proposal: ProposedViewSize(width: width, height: bounds.height))
-            x += width
         }
     }
 }
