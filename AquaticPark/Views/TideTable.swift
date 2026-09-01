@@ -38,8 +38,16 @@ struct TideTable: View {
                 }
             }
         }
-        .padding(.bottom, 16)
+        .frame(height: Self.height, alignment: .top)
+        .clipped()
     }
+
+    /// A fixed slot. How many events fall in the window changes as the marker moves,
+    /// and the chart above takes whatever height this section leaves — so the table
+    /// reserves room for the busiest window rather than resizing under the graph.
+    static let height: CGFloat = 10 * rowHeight + 2 * headerHeight + 16
+    private static let rowHeight: CGFloat = 32
+    private static let headerHeight: CGFloat = 31
 
     private var events: [Event] {
         let start = marker.addingTimeInterval(-6 * 3600)
@@ -66,8 +74,8 @@ struct TideTable: View {
             .tracking(0.81)
             .foregroundStyle(Theme.inkFaint)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 14)
             .padding(.horizontal, 22)
+            .frame(height: Self.headerHeight, alignment: .bottom)
             .padding(.bottom, 6)
     }
 
@@ -114,8 +122,8 @@ struct TideTable: View {
                 .monospacedDigit()
                 .foregroundStyle(valueColor)
         }
-        .padding(.vertical, 9)
         .padding(.horizontal, 22)
+        .frame(height: Self.rowHeight)
     }
 
     private static let clock: DateFormatter = {

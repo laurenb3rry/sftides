@@ -17,6 +17,8 @@ struct ConditionsStrip: View {
             column("WIND") { windValue }
             column("UV \(uvIndex)") { glyph }
         }
+        // Breathing room under the chart, in place of the rule that used to be there.
+        .padding(.top, 26)
         .padding(.horizontal, 14)
         .padding(.bottom, 34)
     }
@@ -30,7 +32,10 @@ struct ConditionsStrip: View {
                 .tracking(0.72)
                 .monospacedDigit()
                 .foregroundStyle(Theme.inkMuted)
+            // Fixed slot. SF Symbols do not all measure the same, and the strip sets
+            // the height of the chart above it — an unpinned glyph moves the graph.
             value()
+                .frame(height: 24)
         }
         .frame(maxWidth: .infinity)
     }

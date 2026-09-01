@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 
 struct ContentView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var curve: [TideSample] = []
     @State private var extremes: [TideExtreme] = []
     @State private var events: [CurrentEvent] = []
@@ -62,33 +63,24 @@ struct ContentView: View {
     /// puts the `NOW` affordance on the readout.
     private var nowMark: Date { Conditions.snap(now, to: window) }
 
-    /// One screenful, nothing below the fold. The scroll view survives only because
-    /// pull-to-refresh is the sole retry path (§5.8) — `minHeight` makes the content
-    /// exactly fill the viewport, so there is no scroll range, just the refresh pull.
+    /// One screenful, and only ever one screenful. No scroll view at all: the chart
+    /// absorbs whatever height the header, conditions and links leave it, so the
+    /// layout fits every device exactly and nothing can be dragged off either edge.
     var body: some View {
-        GeometryReader { proxy in
-            ScrollView {
-                VStack(spacing: 0) {
-                    header
-                    bannerRow
-                    chartLabelRow
-                    TideChart(curve: curve, slacks: slacks, window: window,
-                              showsDayLines: range == .h72, now: now, marker: $marker)
-                    Readout(height: Conditions.height(at: marker, in: curve), time: marker,
-                            showsNow: marker != nowMark, onNow: { select(time: now) })
-                        .animation(.easeOut(duration: 0.18), value: marker)
-                    // Pins the content block to the bottom, so a state grows upward
-                    // into the gap rather than downward off the screen.
-                    Spacer(minLength: 0)
-                    contentBlock
-                    links
-                }
-                .frame(minHeight: proxy.size.height)
-            }
+        VStack(spacing: 0) {
+            header
+            bannerRow
+            chart
+            contentBlock
+            links
         }
         .background(Theme.bg)
-        .refreshable { await refresh() }
         .onChange(of: marker) { tapIfSlackCrossed() }
+        .onChange(of: scenePhase) { _, phase in
+            // Pull-to-refresh went with the scroll view. Returning to the app is the
+            // everyday retry; the banner is tappable for the rest (§5.8).
+            if phase == .active { Task { await refresh() } }
+        }
         .task {
             now = Date()
             anchor = now
@@ -116,41 +108,113 @@ struct ContentView: View {
         .padding(.bottom, 26)
     }
 
-    // MARK: - Chart label row
+    // MARK: - Chart
 
-    private var chartLabelRow: some View {
-        HStack {
-            Text(stateWord)
-                .tracking(0.9)
-                .foregroundStyle(Theme.blue)
-            Spacer()
-            rangeToggle
-        }
-        .font(.system(size: 10, design: .monospaced))
-        .padding(.horizontal, 22)
-        .padding(.bottom, 2)
+    /// Three corners of the plot carry what used to sit in the label row above it
+    /// and the readout below it: range, height, and the state word. The floor keeps
+    /// the plot legible when the tide table is open under it.
+    private var chart: some View {
+        TideChart(curve: curve, window: window, showsDayLines: range == .h72,
+                  now: now, marker: $marker)
+            .frame(minHeight: 180, maxHeight: .infinity)
+            .overlay(alignment: .topLeading) {
+                rangeToggle
+                    .padding(.leading, 12)
+                    .padding(.top, 2)
+            }
+            .overlay(alignment: .topTrailing) {
+                heightReadout
+                    .padding(.trailing, 22)
+                    .padding(.top, 14)
+            }
+            .overlay(alignment: .bottomLeading) {
+                stateWord
+                    .padding(.leading, 36)
+                    .padding(.bottom, TideChart.axisHeight + 8)
+            }
     }
 
-    private var stateWord: String {
-        guard let rising = Conditions.isRising(at: marker, in: curve) else { return "—" }
-        return rising ? "RISING" : "FALLING"
+    private var heightReadout: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            Text("HEIGHT")
+                .font(.system(size: 9, design: .monospaced))
+                .tracking(1)
+                .foregroundStyle(Theme.inkMuted)
+            Text(Conditions.height(at: marker, in: curve)
+                    .map { String(format: "%+.2f FT", $0) } ?? "—")
+                .font(.system(size: 27, weight: .semibold, design: .monospaced))
+                .tracking(-0.6)
+                .monospacedDigit()
+                .contentTransition(.opacity)
+                .foregroundStyle(Theme.ink)
+            if marker != nowMark {
+                Button { select(time: now) } label: {
+                    Text("NOW")
+                        .font(.system(size: 9, design: .monospaced))
+                        .tracking(0.81)
+                        .foregroundStyle(Theme.blue)
+                        // Widens the hit area without moving the glyphs.
+                        .padding(.leading, 28)
+                        .padding(.trailing, 4)
+                        .padding(.vertical, 8)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.18), value: marker)
+    }
+
+    /// Slack is not drawn on the plot any more, so this word is the only place it
+    /// shows: scrubbing the marker into a slack window is what reveals it.
+    @ViewBuilder
+    private var stateWord: some View {
+        if let stateText {
+            HandwritingText(text: stateText, size: 25)
+                .foregroundStyle(Theme.blue)
+                .contentTransition(.opacity)
+                .animation(.easeOut(duration: 0.18), value: stateText)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var stateText: String? {
+        if isMarkerInSlack { return "Slack tide" }
+        guard let rising = Conditions.isRising(at: marker, in: curve) else { return nil }
+        return rising ? "Rising tide" : "Falling tide"
     }
 
     /// Plain text, no chrome. Each segment is independently tappable.
     private var rangeToggle: some View {
         HStack(spacing: 0) {
             segment("24H", .h24)
-            Text(" / ").foregroundStyle(Theme.pillOff)
             segment("72H", .h72)
         }
+        .font(.system(size: 10, design: .monospaced))
         .tracking(0.8)
     }
 
+    /// A `Button` rather than a tap gesture, and padded out to a finger: the plot
+    /// underneath scrubs on contact, so anything that misses these bounds moves the
+    /// marker instead of switching range.
     private func segment(_ title: String, _ value: ChartRange) -> some View {
-        Text(title)
-            .foregroundStyle(range == value ? Theme.ink : Theme.inkFaint)
-            .contentShape(Rectangle())
-            .onTapGesture { select(range: value) }
+        Button {
+            select(range: value)
+        } label: {
+            Text(title)
+                .foregroundStyle(range == value ? Theme.ink : Theme.inkFaint)
+                .padding(.bottom, 3)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(range == value ? Theme.blue : .clear)
+                        .frame(height: 1.5)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     /// The marker keeps its timestamp; only the window around it changes.
@@ -263,6 +327,8 @@ struct ContentView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 22)
             .padding(.bottom, 18)
+            .contentShape(Rectangle())
+            .onTapGesture { Task { await refresh() } }
     }
 
     private static let stamp: DateFormatter = {

@@ -28,3 +28,5 @@ PLAN.md
 .tokensave/
 .serena/
 .headroom*
+Resources/Fonts/
+*.ttf

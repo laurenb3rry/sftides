@@ -12,6 +12,7 @@
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		254102FCB19B4D44B7BADEBC /* AquaticPark */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = AquaticPark; sourceTree = "<group>"; };
+		A61738B6749A410E98CF8DE1 /* Resources */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Resources; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +38,7 @@
 			isa = PBXGroup;
 			children = (
 				254102FCB19B4D44B7BADEBC /* AquaticPark */,
+				A61738B6749A410E98CF8DE1 /* Resources */,
 				6B5DBDDBF27B40DDA461E9CD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -58,6 +60,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				254102FCB19B4D44B7BADEBC /* AquaticPark */,
+				A61738B6749A410E98CF8DE1 /* Resources */,
 			);
 			name = AquaticPark;
 			productName = AquaticPark;
