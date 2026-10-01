@@ -67,7 +67,19 @@ struct RouteVerdict {
     let title: String
     let sublabel: String
     let verdict: String
+    /// Short and lowercase, because it is the one set in Lauren's handwriting.
+    let condition: String
     let isFavorable: Bool
+}
+
+/// A span where one of the two exposed routes reads favourably, with the slack it hangs
+/// off and a phrase for what the current is doing through it.
+struct SwimWindow: Identifiable {
+    let start: Date
+    let end: Date
+    let slack: Date?
+    let current: String
+    var id: Date { start }
 }
 
 /// Curve and extremes share a fetch and a TTL, so they cache as one payload.

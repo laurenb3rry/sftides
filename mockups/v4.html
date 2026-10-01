@@ -1,0 +1,253 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Aquatic Park — round 4</title>
+<style>
+@font-face{font-family:'H1';src:url('me1.ttf') format('truetype')}
+@font-face{font-family:'H2';src:url('me2.ttf') format('truetype')}
+@font-face{font-family:'H3';src:url('me3.ttf') format('truetype')}
+@font-face{font-family:'H4';src:url('me4.ttf') format('truetype')}
+:root{--mono:ui-monospace,'SF Mono',Menlo,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#141416;color:#86868e;font-family:var(--mono);padding:46px 40px 90px}
+h1{font-size:12px;letter-spacing:.22em;color:#f0f0ee;font-weight:400;margin-bottom:8px}
+.sub{font-size:11px;line-height:1.75;max-width:810px;margin-bottom:20px}
+.sub b{color:#f0f0ee;font-weight:400}
+.warn{border-left:2px solid #d9a13a;padding-left:14px;margin-bottom:44px;max-width:810px;
+  font-size:11px;line-height:1.75}
+.warn b{color:#d9a13a;font-weight:400}
+.rail{display:flex;gap:46px;flex-wrap:wrap;align-items:flex-start}
+.slot{width:390px}
+.cap{font-size:10px;letter-spacing:.18em;color:#f0f0ee;margin-bottom:5px}
+.cap span{color:#696971;letter-spacing:.05em}
+.note{font-size:10.5px;line-height:1.7;margin:11px 2px 0;color:#7d7d85}
+.swatch{display:inline-block;width:9px;height:9px;vertical-align:-1px;margin-right:5px}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;
+  box-shadow:0 0 0 1px #2c2c32,0 30px 70px rgba(0,0,0,.6)}
+svg{display:block;overflow:visible}
+
+/* ---------- ALMANAC frame, paper + ink fixed across all six ---------- */
+.f{--paper:#f4f1e8;--ink:#16161a;--mute:#7b7870;--hair:#16161a22;
+  --disp:'Didot','Bodoni 72',serif;--num:'Didot','Bodoni 72',serif;
+  --body:'Baskerville',Georgia,serif;
+  background:var(--paper);color:var(--ink);padding:52px 0 24px;
+  display:flex;flex-direction:column;position:relative;font-family:var(--body)}
+.f .pad{padding:0 26px;position:relative;z-index:2}
+.f .last{flex:1;display:flex;flex-direction:column}
+.f .grid{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 25px,var(--hair) 25px 25.7px);
+  background-position:26px 0;opacity:.4}
+.f .mast{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+  font-size:8.6px;letter-spacing:.2em;color:var(--mute);padding-bottom:7px;
+  border-bottom:2px solid var(--ink)}
+.f .mast b{color:var(--ink);font-weight:400;letter-spacing:.26em}
+
+/* handwriting utility — letters & digits only; punctuation falls to the printed face */
+.hw{font-family:var(--hwf);font-size:calc(1em * var(--hwm));letter-spacing:var(--hwt);
+  -webkit-text-stroke:var(--hwk) currentColor;color:var(--hwc,inherit)}
+
+/* hero */
+.f .hero{margin:16px 0 0}
+.f .kk{font-family:var(--mono);font-size:7.8px;letter-spacing:.2em;color:var(--mute)}
+.f .two{display:flex;margin-top:9px}
+.f .two>div{flex:1;border-left:1px solid var(--hair);padding-left:12px}
+.f .two>div:first-child{border-left:0;padding-left:0}
+.f .two .lab{font-family:var(--mono);font-size:7.6px;letter-spacing:.13em;color:var(--mute);line-height:1.65}
+.f .two .w2{font-family:var(--disp);font-size:31px;line-height:1.05;letter-spacing:-.02em;margin:5px 0 4px}
+.f .two .w2.off{color:var(--mute)}
+.f .two .w2 .d{color:var(--mute);margin:0 1px}
+.f .two .sub{font-family:var(--mono);font-size:7.6px;letter-spacing:.13em;color:var(--mute);line-height:13px}
+.f .two .sub.h{font-family:var(--body);letter-spacing:0;color:var(--ink);line-height:14px}
+
+/* now strip */
+.f .now{display:flex;margin:14px 0 0;border-top:1px solid var(--hair);padding-top:11px}
+.f .now>div{flex:1}
+.f .now .k{font-family:var(--mono);font-size:7.6px;letter-spacing:.16em;color:var(--mute);margin-bottom:5px}
+.f .now .v{font-family:var(--num);font-size:19px;letter-spacing:-.015em;line-height:20px}
+.f .now .v i{font-style:normal;font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:.05em}
+.f .now .v .u{color:var(--mute)}
+.f .now .v.st{font-family:var(--hwf);font-size:22px;color:var(--spot);line-height:.9}
+
+/* figures */
+.f .figcap{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.6px;
+  letter-spacing:.17em;color:var(--mute);border-top:1px solid var(--ink);padding-top:6px;margin-top:14px}
+
+/* routes */
+.f .rt{display:flex;align-items:baseline;gap:9px;padding:7.5px 0;border-top:1px solid var(--hair);
+  font-family:var(--mono);font-size:8.2px;letter-spacing:.14em;color:var(--mute)}
+.f .rt .nm{flex:1;font-family:var(--body);font-size:15px;letter-spacing:.01em;color:var(--ink)}
+.f .rt .nm.off{color:var(--mute)}
+.f .rt .cond.h{font-family:var(--body);letter-spacing:0;color:var(--ink)}
+.f .rt .vd{font-family:var(--mono);font-weight:600;color:var(--spot)}
+.f .rt .vd.no{color:var(--mute);font-weight:400}
+.f .foot{margin-top:auto;display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:8.4px;letter-spacing:.17em;color:var(--mute);border-top:2px solid var(--ink);padding-top:8px}
+</style></head><body>
+<h1>AQUATIC PARK — ROUND 4 · ALMANAC, IN BLUE, WITH YOUR HAND</h1>
+<p class="sub">All six are <b>frame 6 / ALMANAC</b>: both big swims side by side, the day ribbon, tide figure above the five-day mosaic, SPECTRO route rows. Paper is now <b>#f4f1e8</b> — the white from frame 3, not the yellowish oatmeal. Olive is gone; each frame carries a different blue, labelled. <b>Frame 1 is your requested change and nothing else</b> (the control). Frames 2–6 add the handwriting you asked for: the lines under both swim times, the tide-now / water / air numbers, and the route conditions.</p>
+<div class="warn"><b>Two constraints found in the font files.</b> Your four faces contain exactly 63 glyphs — <code>A–Z a–z 0–9</code> and space. There is no period, colon, comma, degree sign or middle dot, so <code>4.3</code>, <code>61.2°</code> and <code>slack 11:42</code> cannot be set purely in your hand. Every frame below sets <i>letters and digits</i> in your writing and lets the punctuation fall through to the printed face — it reads as intentional, and it's the same thing you'd do in SwiftUI. Add those four marks to the font and it becomes seamless.<br><br>All four faces also report identical vertical metrics (x-height 0.48 em), so the correct small-size multiplier can't be computed from the files. It's a knob instead: each frame states its face and its multiplier so you can pick by eye.</div>
+<div class="rail" id="rail"></div>
+<script>
+const TAU=Math.PI*2, NOW=9.4, NS='http://www.w3.org/2000/svg';
+const tideD=(h,d=0)=>{const A=1+0.17*Math.sin(d*0.55);
+  return 3.0+2.4*A*Math.sin(TAU*(h-9.1-0.84*d)/12.42)+0.75*Math.sin(TAU*(h-5-0.84*d)/24.84);};
+const curD=(h,d=0)=>2.55*(1+0.15*Math.sin(d*0.55))*Math.sin(TAU*(h-14.1-0.84*d)/12.42);
+const tide=h=>tideD(h,0);
+let LO=99,HI=-99; for(let h=0;h<=24;h+=.05){LO=Math.min(LO,tide(h));HI=Math.max(HI,tide(h));}
+function E(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function TX(s,x,y,t,a={}){const e=E('text',Object.assign({x,y,'font-family':'ui-monospace,monospace',
+  'font-size':7.6,'letter-spacing':1.3},a));e.textContent=t;s.appendChild(e);return e;}
+
+/* Wrap runs of letters/digits/space in the handwriting face; anything else
+   (. : , ° ·) stays in the printed face, because the font has no punctuation. */
+const hw=s=>s.replace(/[A-Za-z0-9 ]+/g,m=>`<span class="hw">${m}</span>`);
+
+/* ---------- FIG 1 · tide + gate ---------- */
+function tideFig(s,p,i){
+  const W=338,base=92,amp=82,mid=134,ks=8.6;
+  const d=E('defs'),pat=E('pattern',{id:'ht'+i,width:4,height:4,patternUnits:'userSpaceOnUse'});
+  pat.appendChild(E('circle',{cx:1.4,cy:1.4,r:1.05,fill:p.spot,opacity:.6}));
+  d.appendChild(pat);s.appendChild(d);
+  for(let k=1;k<3;k++){const y=10+(base-10)*k/3;
+    s.appendChild(E('line',{x1:0,x2:W,y1:y,y2:y,stroke:p.ink,'stroke-width':.6,opacity:.14}));}
+  let c='';for(let h=0;h<=24;h+=.1)c+=(c?'L':'M')+(h/24*W).toFixed(1)+' '
+    +(base-(tide(h)-LO)/(HI-LO)*amp).toFixed(1)+' ';
+  s.appendChild(E('path',{d:c+`L${W} ${base} L0 ${base} Z`,fill:`url(#ht${i})`}));
+  s.appendChild(E('path',{d:c,fill:'none',stroke:p.ink,'stroke-width':1.7}));
+  s.appendChild(E('rect',{x:11.17/24*W,y:4,width:(13.67-11.17)/24*W,height:base-4,fill:p.spot,opacity:.14}));
+  TX(s,11.17/24*W+3,0,'WEST WINDOW',{fill:p.spot,'font-size':7});
+  s.appendChild(E('line',{x1:0,x2:W,y1:base,y2:base,stroke:p.ink,'stroke-width':1.2}));
+  [[0,'MIDNIGHT'],[6,'6 AM'],[12,'NOON'],[18,'6 PM']].forEach(([h,l])=>{const x=h/24*W;
+    s.appendChild(E('line',{x1:x,x2:x,y1:base,y2:base+4,stroke:p.ink,'stroke-width':1}));
+    TX(s,x+4,base+12,l,{fill:p.mute,'font-size':7,'letter-spacing':1.4});});
+  for(let k=0;k<72;k++){const h=k*24/72,x=k*(W/72),v=curD(h),cl=Math.abs(v)*ks;
+    s.appendChild(E('rect',{x,y:v>0?mid-cl:mid,width:W/72-1.3,height:Math.max(cl,.7),
+      fill:v>0?p.ink:p.spot,opacity:.74}));}
+  s.appendChild(E('line',{x1:0,x2:W,y1:mid,y2:mid,stroke:p.ink,'stroke-width':.6,opacity:.4}));
+  TX(s,0,mid+30,'GATE CURRENT · FLOOD ABOVE, EBB BELOW · 0–3 KT',{fill:p.mute,'font-size':7});
+  const mx=NOW/24*W;
+  s.appendChild(E('line',{x1:mx,x2:mx,y1:4,y2:base,stroke:p.ink,'stroke-width':1}));
+  s.appendChild(E('circle',{cx:mx,cy:base-(tide(NOW)-LO)/(HI-LO)*amp,r:3.6,fill:p.ink}));}
+
+/* ---------- FIG 2 · five days, scored for W/E ---------- */
+function mosaic(s,p,i){
+  const W=338,L=38,PW=W-L,cw=PW/24-1.5,rh=25,gap=6;
+  const d=E('defs'),h=E('pattern',{id:'hx'+i,width:4,height:4,patternUnits:'userSpaceOnUse',
+    patternTransform:'rotate(45)'});
+  h.appendChild(E('rect',{width:1.5,height:4,fill:p.spot,opacity:.62}));d.appendChild(h);s.appendChild(d);
+  const labs=['TODAY','WED','THU','FRI','SAT'];
+  for(let dy=0;dy<5;dy++){const y=14+dy*(rh+gap);
+    TX(s,0,y+rh/2+3,labs[dy],{fill:dy?p.mute:p.ink,'font-size':7.2});
+    for(let hr=0;hr<24;hr++){const x=L+hr*(PW/24),night=hr<7||hr>19;
+      const q=1-Math.min(1,Math.abs(curD(hr+.5,dy))/2.0);
+      const lvl=night?0:(q>.62?3:q>.3?2:1);
+      if(lvl===3) s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:p.spot}));
+      else if(lvl===2) s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:`url(#hx${i})`}));
+      else s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:'none',stroke:p.ink,
+        'stroke-width':.7,opacity:night?.11:.3}));}}
+  [[6,'06'],[12,'12'],[18,'18']].forEach(([hr,l])=>
+    TX(s,L+hr*(PW/24)+cw/2,172,l,{fill:p.mute,'text-anchor':'middle','font-size':7.2}));
+  s.appendChild(E('rect',{x:L+11*(PW/24)-2,y:11,width:(PW/24)*2.6+2,height:rh+6,fill:'none',
+    stroke:p.ink,'stroke-width':1.4}));
+  const nx=L+9*(PW/24);
+  s.appendChild(E('line',{x1:nx,x2:nx,y1:8,y2:164,stroke:p.ink,'stroke-width':1,opacity:.5,
+    'stroke-dasharray':'2 3'}));}
+
+/* ---------- day ribbon ---------- */
+function ribbon(s,p){
+  const W=338,y=7,hh=11;
+  s.appendChild(E('rect',{x:0,y,width:W,height:hh,fill:p.ink,opacity:.07}));
+  for(let hr=7;hr<=20;hr++){const q=1-Math.min(1,Math.abs(curD(hr+.5,0))/2.0);
+    if(q>.3) s.appendChild(E('rect',{x:hr/24*W,y,width:W/24,height:hh,fill:p.spot,opacity:q>.62?1:.32}));}
+  const a=11.17/24*W,b=13.67/24*W;
+  s.appendChild(E('rect',{x:a,y:y-3,width:b-a,height:hh+6,fill:'none',stroke:p.ink,'stroke-width':1.3}));
+  const nx=NOW/24*W;
+  s.appendChild(E('polygon',{points:`${nx-3.5},${y-6} ${nx+3.5},${y-6} ${nx},${y-1}`,fill:p.ink}));
+  [[0,'12A'],[6,'6A'],[12,'12P'],[18,'6P'],[24,'12A']].forEach(([hr,l])=>
+    TX(s,Math.min(Math.max(hr/24*W,8),W-8),y+hh+11,l,{fill:p.mute,'text-anchor':'middle','font-size':6.8}));}
+
+/* ---------- content, printed vs handwritten ---------- */
+const COPY={
+  wSub:['slack 11:42, ebb easing','wind W 12, in the lee'],
+  eSub:['flood under 1 kt','chop laying down'],
+  conds:['sheltered','with ebb','chop']};
+const CAPS=s=>s.toUpperCase();
+
+function frameHTML(f,i){
+  const H=f.hand;
+  const sub=(lines,cls)=>`<div class="sub${H?' h':''} ${cls||''}">`+
+    lines.map(l=>H?hw(l):CAPS(l)).join('<br>')+`</div>`;
+  // tide-now values. hybrid = numerals in hand, units in mono
+  const nowVals = !H
+    ? [`4.3<i> FT</i>`,`61.2<span class="u">°</span>`,`58<span class="u">°</span><i> · 12 W</i>`]
+    : f.hybrid
+      ? [`${hw('4')}.${hw('3')}<i> FT</i>`,`${hw('61')}.${hw('2')}<span class="u">°</span>`,
+         `${hw('58')}<span class="u">°</span><i> · 12 W</i>`]
+      : [`${hw('4')}.${hw('3')} ${hw('FT')}`,`${hw('61')}.${hw('2')}<span class="u">°</span>`,
+         `${hw('58')}<span class="u">°</span><i> · 12 W</i>`];
+  const cond=k=>H?`<span class="cond h">${hw(COPY.conds[k])}</span>`
+                 :`<span class="cond">${CAPS(COPY.conds[k])}</span>`;
+  return `<div class="phone f" style="--spot:${f.blue};--hwf:'${f.face}';--hwm:${f.mult};
+      --hwt:${f.track||'.01em'};--hwk:${f.stroke||'.2px'}${f.hwc?';--hwc:'+f.blue:''}">
+    <div class="grid"></div>
+    <div class="pad mast"><b>AQUATIC PARK</b><span>TUE 30 SEP · 09:24</span></div>
+    <div class="pad hero">
+      <div class="kk">NEXT BIG SWIM · TODAY</div>
+      <div class="two">
+        <div>
+          <div class="lab">WEST → FORT MASON<br>0.9 MI</div>
+          <div class="w2">11:10<span class="d">–</span>13:40</div>
+          ${sub(COPY.wSub)}
+        </div>
+        <div>
+          <div class="lab">EAST → WHARF<br>0.6 MI</div>
+          <div class="w2 off">15:20<span class="d">–</span>17:10</div>
+          ${sub(COPY.eSub)}
+        </div>
+      </div>
+    </div>
+    <svg class="rb" width="338" height="36" style="margin:9px 26px 0"></svg>
+    <div class="pad now">
+      <div><div class="k">TIDE NOW</div><div class="v">${nowVals[0]}</div></div>
+      <div><div class="k">&nbsp;</div><div class="v st">rising</div></div>
+      <div><div class="k">WATER</div><div class="v">${nowVals[1]}</div></div>
+      <div><div class="k">AIR / WIND</div><div class="v">${nowVals[2]}</div></div>
+    </div>
+    <div class="pad figcap"><span>FIG. 1 — TIDE &amp; GATE CURRENT, 24 H</span><span>FT MLLW</span></div>
+    <svg class="t1" width="338" height="170" style="margin:7px 26px 0"></svg>
+    <div class="pad figcap"><span>FIG. 2 — WEST / EAST WINDOWS, 5 DAYS</span><span>GOOD ■ FAIR ▨ POOR □</span></div>
+    <svg class="t2" width="338" height="178" style="margin:5px 26px 0"></svg>
+    <div class="pad last">
+      <div class="rt"><span class="nm">Cove</span>${cond(0)}<span class="vd">GO</span></div>
+      <div class="rt"><span class="nm">West → Fort Mason</span>${cond(1)}<span class="vd">GO</span></div>
+      <div class="rt"><span class="nm off">East → Wharf</span>${cond(2)}<span class="vd no">HOLD</span></div>
+      <div class="foot"><span>TABLE · ROUTE</span><span>24H / 5D</span></div>
+    </div>
+  </div>`;}
+
+const FRAMES=[
+ {n:'1 · ALMANAC BLUE', s:'your change only — no new handwriting', blue:'#2338C7', face:'H1', mult:1,
+  note:'<b>The control.</b> Paper swapped to #f4f1e8, olive swapped for ultramarine <span class="swatch" style="background:#2338C7"></span>#2338C7 — deep enough to hold in the halftone dots and the solid mosaic cells without vibrating against warm paper, which an electric blue does. Handwriting still only on “rising”. Compare every frame below against this one.'},
+ {n:'2 · HAND · H1 ×1.15', s:'me1, minimum intervention', blue:'#2338C7', face:'H1', mult:1.15, hand:1,
+  note:'Full handwriting spec, <b>me1 at ×1.15</b> — sized to match the mono’s x-height per the font’s own (unreliable) metrics. Hairline 0.2px stroke added so the thin pen lines survive at 9px. The most restrained reading: it looks like the sheet was printed with a few values filled in by hand.'},
+ {n:'3 · HAND · H2 ×1.35', s:'me2, mid multiplier', blue:'#1E4FD8', face:'H2', mult:1.35, hand:1,
+  note:'<b>me2 at ×1.35</b>, brighter ultramarine <span class="swatch" style="background:#1E4FD8"></span>#1E4FD8. The extra 20% is where the small text stops being a texture and starts being readable at a glance — my bet for the right multiplier.'},
+ {n:'4 · HAND · H3 ×1.55', s:'me3, your current app blue', blue:'#2038F0', face:'H3', mult:1.55, hand:1,
+  note:'<b>me3 at ×1.55</b> with <span class="swatch" style="background:#2038F0"></span>#2038F0, the blue already in <code>Theme.swift</code>. Shows both the upper limit of the multiplier — past this the hand starts shouting over the Didot — and why that electric blue fights the warm paper in the halftone.'},
+ {n:'5 · HAND · H4 ×1.35, hybrid', s:'me4, units stay printed', blue:'#1A3A8F', face:'H4', mult:1.35,
+  hand:1, hybrid:1,
+  note:'<b>me4 at ×1.35</b>, deep navy <span class="swatch" style="background:#1A3A8F"></span>#1A3A8F. Hybrid numerals: the <i>digits</i> are yours, the units (FT, °, W) stay in the printed face. Handwritten digits are the one place ambiguity actually costs you — 4.3 vs 9.3 — and this hedges it while keeping the character.'},
+ {n:'6 · HAND IN BLUE', s:'me1 ×1.35, hand = the pen layer', blue:'#2338C7', face:'H1', mult:1.35,
+  hand:1, hwc:1,
+  note:'<b>The idea worth stealing.</b> Printed type is ink, <i>everything handwritten is blue</i> — the page reads as a printed almanac annotated in pen. The hand now carries meaning rather than just flavour: blue = live, measured, yours. Costs nothing and makes the handwriting feel load-bearing instead of decorative.'}];
+
+const rail=document.getElementById('rail');
+FRAMES.forEach((f,i)=>{
+  const slot=document.createElement('div');slot.className='slot';
+  slot.innerHTML=`<p class="cap">${f.n} <span>· ${f.s}</span></p>${frameHTML(f,i)}
+    <p class="note">${f.note}</p>`;
+  rail.appendChild(slot);
+  const p={ink:'#16161a',mute:'#7b7870',spot:f.blue,paper:'#f4f1e8'};
+  tideFig(slot.querySelector('.t1'),p,i);
+  mosaic(slot.querySelector('.t2'),p,i);
+  ribbon(slot.querySelector('.rb'),p);
+});
+</script></body></html>

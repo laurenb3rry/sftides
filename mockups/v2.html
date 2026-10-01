@@ -1,0 +1,563 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Aquatic Park — round 2</title>
+<style>
+@font-face{font-family:'Hand';src:url('me1.ttf') format('truetype')}
+@font-face{font-family:'Hand2';src:url('me2.ttf') format('truetype')}
+:root{--mono:ui-monospace,'SF Mono',Menlo,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#141416;color:#86868e;font-family:var(--mono);padding:46px 40px 90px}
+h1{font-size:12px;letter-spacing:.22em;color:#f0f0ee;font-weight:400;margin-bottom:8px}
+.sub{font-size:11px;line-height:1.75;max-width:780px;margin-bottom:46px}
+.sub b{color:#f0f0ee;font-weight:400}
+.rail{display:flex;gap:46px;flex-wrap:wrap;align-items:flex-start}
+.slot{width:390px}
+.cap{font-size:10px;letter-spacing:.18em;color:#f0f0ee;margin-bottom:5px}
+.cap span{color:#696971;letter-spacing:.05em}
+.note{font-size:10.5px;line-height:1.7;margin:11px 2px 0;color:#7d7d85}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;
+  box-shadow:0 0 0 1px #2c2c32,0 30px 70px rgba(0,0,0,.6)}
+svg{display:block;overflow:visible}
+.lbl{font-size:8.5px;letter-spacing:.15em}
+
+/* ============ 1 · SPECTRO ============ */
+.S{background:#ece8e0;color:#121214;padding:52px 0 26px;display:flex;flex-direction:column;
+  font-family:'Avenir Next Condensed','Avenir Next',var(--mono)}
+.S .pad{padding:0 26px}
+.S .mast{display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:2.5px solid #121214;padding-bottom:7px}
+.S .mast h2{font-size:15px;letter-spacing:.3em;font-weight:600;text-transform:uppercase}
+.S .mast em{font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.13em;color:#7a766d}
+.S .hero{display:flex;align-items:flex-start;gap:0;margin:20px 0 4px}
+.S .hero .n{font-family:'Didot','Bodoni 72',serif;font-size:126px;line-height:.72;letter-spacing:-.04em}
+.S .hero .n sup{font-size:19px;letter-spacing:.1em;font-family:var(--mono);top:-4.2em;position:relative;left:3px}
+.S .hero .r{margin-left:auto;text-align:right;padding-top:6px}
+.S .hero .r .st{font-family:'Hand',cursive;font-size:30px;color:#c2301a;line-height:1}
+.S .hero .r .sm{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;color:#7a766d;margin-top:7px;line-height:1.7}
+.S .figlbl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;
+  letter-spacing:.16em;color:#7a766d;border-top:1px solid #121214;padding-top:5px;margin-top:14px}
+.S .tbl{display:flex;margin-top:4px;border-top:1px solid #c6c1b6}
+.S .tbl div{flex:1;padding:11px 0 0}
+.S .tbl .k{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:#7a766d}
+.S .tbl .v{font-size:25px;font-weight:600;letter-spacing:-.01em;line-height:1.15}
+.S .tbl .v i{font-style:normal;font-size:11px;font-weight:400;color:#7a766d;font-family:var(--mono)}
+.S .rt{display:flex;align-items:baseline;gap:9px;padding:8px 0;border-top:1px solid #c6c1b6;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.13em}
+.S .rt .nm{flex:1;font-family:'Avenir Next Condensed','Avenir Next',sans-serif;
+  font-size:15px;letter-spacing:.02em;font-weight:500}
+.S .rt .nm.off{color:#9a958a}
+.S .rt .vd{font-weight:600}
+.S .rt .vd.go{color:#c2301a}
+.S .rt .vd.no{color:#9a958a}
+.S .foot{margin-top:auto;display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:8.5px;letter-spacing:.17em;color:#7a766d;border-top:2.5px solid #121214;padding-top:8px}
+
+/* ============ 2 · RIDGELINE ============ */
+.R{background:#0d1330;color:#f3eee0;padding:52px 24px 26px;display:flex;flex-direction:column;
+  font-family:'Futura','Avenir Next',var(--mono)}
+.R .mast{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+  font-size:9px;letter-spacing:.2em;color:#6e7ba8}
+.R .mast b{color:#f3eee0;font-weight:400;letter-spacing:.26em}
+.R .hero{margin:22px 0 0}
+.R .hero .n{font-size:112px;line-height:.78;letter-spacing:-.05em;font-weight:500;display:flex;align-items:flex-start}
+.R .hero .n sup{font-family:var(--mono);font-size:17px;letter-spacing:.1em;color:#8e9bc6;margin:8px 0 0 7px}
+.R .hero .st{font-family:'Hand',cursive;font-size:31px;color:#f0612a;margin-top:-4px}
+.R .meta{display:flex;gap:0;margin:16px 0 10px;font-family:var(--mono)}
+.R .meta div{flex:1;border-left:1px solid #222b52;padding-left:9px}
+.R .meta div:first-child{border-left:0;padding-left:0}
+.R .meta .k{font-size:8px;letter-spacing:.15em;color:#6e7ba8;margin-bottom:5px}
+.R .meta .v{font-size:17px;letter-spacing:-.01em;font-family:'Futura','Avenir Next',sans-serif}
+.R .meta .v i{font-style:normal;font-size:9.5px;color:#8e9bc6;font-family:var(--mono)}
+.R .rt{display:flex;align-items:center;gap:10px;padding:8.5px 0;border-top:1px solid #222b52;font-family:var(--mono)}
+.R .rt .bar{width:30px;height:4px}
+.R .rt .nm{flex:1;font-family:'Futura','Avenir Next',sans-serif;font-size:13.5px;letter-spacing:.01em}
+.R .rt .nm.off{color:#737fa6}
+.R .rt .sub{font-size:8px;letter-spacing:.14em;color:#6e7ba8}
+.R .foot{margin-top:auto;display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:8.5px;letter-spacing:.17em;color:#6e7ba8}
+.R .foot b{color:#f0612a;font-weight:400}
+
+/* ============ 3 · WATERLINE ============ */
+.W{background:#dfe7ea;color:#0a2730;position:relative;overflow:hidden;
+  font-family:'Helvetica Neue',Helvetica,var(--mono)}
+.W .sea{position:absolute;left:0;right:0;bottom:0;background:#0a2730}
+.W .lay{position:absolute;inset:0;padding:52px 26px 26px;display:flex;flex-direction:column}
+.W .mast{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+  font-size:9px;letter-spacing:.2em;mix-blend-mode:difference;color:#fff}
+.W .mast b{letter-spacing:.26em;font-weight:400}
+.W .big{margin-top:14px;mix-blend-mode:difference;color:#fff}
+.W .big .n{font-size:132px;line-height:.76;letter-spacing:-.055em;font-weight:200}
+.W .big .n sup{font-family:var(--mono);font-size:17px;letter-spacing:.1em;top:-4.6em}
+.W .st{font-family:'Hand',cursive;font-size:32px;color:#ff6b4a;margin-top:2px}
+.W .wet{margin-top:auto;color:#dfe7ea}
+.W .wet .grp{display:flex;border-top:1px solid #2a4b55;padding:12px 0 0;margin-bottom:12px}
+.W .wet .grp div{flex:1}
+.W .wet .k{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:#7fa0aa;margin-bottom:5px}
+.W .wet .v{font-size:21px;letter-spacing:-.02em;font-weight:300}
+.W .wet .v i{font-style:normal;font-size:10px;color:#7fa0aa;font-family:var(--mono)}
+.W .rt{display:flex;align-items:center;gap:10px;padding:7.5px 0;border-top:1px solid #2a4b55;font-family:var(--mono)}
+.W .rt .nm{flex:1;font-family:'Helvetica Neue',sans-serif;font-size:13px;font-weight:300;letter-spacing:.01em}
+.W .rt .nm.off{color:#6f919c}
+.W .rt .vd{font-size:8px;letter-spacing:.15em}
+.W .foot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8.5px;
+  letter-spacing:.17em;color:#7fa0aa;margin-top:10px}
+</style></head><body>
+<h1>AQUATIC PARK — ROUND 2 · SIX DIRECTIONS</h1>
+<p class="sub">Brief taken: keep <b>A's information hierarchy</b> (one hero number, dense metric row, every route visible). Kill the dark-slate / neon-accent / all-mono look that reads as machine-made. Make the graph do something new that is still instantly readable. Real typeface contrast in every one — display serif or condensed grotesk against mono, never mono alone.</p>
+<div class="rail">
+
+<!-- ========== 1 ========== -->
+<div class="slot">
+  <p class="cap">1 · SPECTRO <span>· tide as a bar field, current mirrored below</span></p>
+  <div class="phone S">
+    <div class="pad mast"><h2>Aquatic Park</h2><em>09:24 · TUE 30 SEP</em></div>
+    <div class="pad hero">
+      <div class="n">4.3<sup>FT</sup></div>
+      <div class="r"><div class="st">rising</div>
+        <div class="sm">SLACK 11:42 · +2H18<br>EBB 2.1 KT, EASING</div></div>
+    </div>
+    <div class="pad figlbl"><span>TIDE · FT MLLW</span><span>24 HOURS</span></div>
+    <svg id="s1" width="338" height="196" style="margin:6px 26px 0"></svg>
+    <div class="pad figlbl" style="border:0;padding-top:3px"><span>GOLDEN GATE · KT</span><span>FLOOD ▲ / EBB ▼</span></div>
+    <div class="pad tbl">
+      <div><div class="k">WATER</div><div class="v">61.2<i>°F</i></div></div>
+      <div><div class="k">AIR</div><div class="v">58<i>°</i></div></div>
+      <div><div class="k">WIND</div><div class="v">12<i> W</i></div></div>
+      <div><div class="k">UV</div><div class="v">4</div></div>
+    </div>
+    <div class="pad" style="margin-top:14px">
+      <div class="rt"><span class="nm">Cove</span><span>SHELTERED</span><span class="vd go">GO</span></div>
+      <div class="rt"><span class="nm">West → Fort Mason</span><span>WITH EBB</span><span class="vd go">GO</span></div>
+      <div class="rt"><span class="nm off">East → Wharf</span><span>CHOP</span><span class="vd no">HOLD</span></div>
+    </div>
+    <div class="pad foot"><span>24H / 72H</span><span>TABLE · ROUTE</span></div>
+  </div>
+  <p class="note"><b style="color:#c2301a">The move:</b> no line chart at all — the day is a field of 96 ruled bars, and the Gate current is a second field mirrored below the same time axis, so flood and ebb read as up and down. Bone paper, oxide red, Didot numeral against condensed grotesk. Looks printed, not rendered.</p>
+</div>
+
+<!-- ========== 2 ========== -->
+<div class="slot">
+  <p class="cap">2 · RIDGELINE <span>· seven days stacked, today in front</span></p>
+  <div class="phone R">
+    <div class="mast"><b>AQUATIC PARK</b><span>TUE 30 SEP · 09:24</span></div>
+    <div class="hero">
+      <div class="n">4.3<sup>FT</sup></div>
+      <div class="st">rising</div>
+    </div>
+    <svg id="s2" width="342" height="300" style="margin:14px 0 0 -2px"></svg>
+    <div class="meta">
+      <div><div class="k">WATER</div><div class="v">61.2<i>°</i></div></div>
+      <div><div class="k">AIR</div><div class="v">58<i>°</i></div></div>
+      <div><div class="k">WIND</div><div class="v">12<i> W</i></div></div>
+      <div><div class="k">GATE</div><div class="v">2.1<i> EBB</i></div></div>
+    </div>
+    <div class="rt"><span class="bar" style="background:#f0612a"></span><span class="nm">Cove</span><span class="sub">SHELTERED</span></div>
+    <div class="rt"><span class="bar" style="background:#f0612a"></span><span class="nm">West → Fort Mason</span><span class="sub">WITH EBB</span></div>
+    <div class="rt"><span class="bar" style="background:#2a3461"></span><span class="nm off">East → Wharf</span><span class="sub">CHOP</span></div>
+    <div class="foot"><span>SLACK <b>11:42</b> · +2H18</span><span>TABLE · ROUTE</span></div>
+  </div>
+  <p class="note"><b style="color:#f0612a">The move:</b> a week of tide as overlapping ridges — today's in signal orange at the front, the rest receding in cream. You see at a glance that tomorrow's low is deeper and Thursday's swing is bigger. Replaces both the 24H and 72H toggle with one picture. Futura on midnight ink.</p>
+</div>
+
+<!-- ========== 3 ========== -->
+<div class="slot">
+  <p class="cap">3 · WATERLINE <span>· the screen is the water</span></p>
+  <div class="phone W">
+    <div class="sea" id="sea" style="height:470px"></div>
+    <svg id="s3" width="390" height="844" style="position:absolute;inset:0"></svg>
+    <div class="lay">
+      <div class="mast"><b>AQUATIC PARK</b><span>09:24</span></div>
+      <div class="big"><div class="n">4.3<sup>FT</sup></div></div>
+      <div class="st">rising</div>
+      <div class="wet">
+        <div class="grp">
+          <div><div class="k">WATER</div><div class="v">61.2<i>°</i></div></div>
+          <div><div class="k">AIR</div><div class="v">58<i>°</i></div></div>
+          <div><div class="k">WIND</div><div class="v">12<i> W</i></div></div>
+          <div><div class="k">UV</div><div class="v">4</div></div>
+        </div>
+        <div class="rt"><span class="nm">Cove</span><span class="vd" style="color:#ff6b4a">GO</span></div>
+        <div class="rt"><span class="nm">West → Fort Mason</span><span class="vd" style="color:#ff6b4a">GO</span></div>
+        <div class="rt"><span class="nm off">East → Wharf</span><span class="vd" style="color:#6f919c">HOLD</span></div>
+        <div class="foot"><span>GATE 2.1 EBB · SLACK 11:42</span><span>TABLE →</span></div>
+      </div>
+    </div>
+  </div>
+  <p class="note"><b style="color:#ff6b4a">The move:</b> height isn't plotted, it's <i>enacted</i> — the sea fills the screen to the actual tide level and the numeral inverts where it crosses the surface. A piling ruler up the right edge gives you the feet, and the 24H trace runs faint through the water so you keep the day's shape. Scrubbing makes the water rise.</p>
+</div>
+
+<!-- ========== 4 ========== -->
+<div class="slot">
+  <p class="cap">4 · PRESS <span>· B, set properly — editorial grid + your hand</span></p>
+  <div class="phone P">
+    <div class="pcol"></div>
+    <div class="pad">
+      <div class="folio"><span>AQUATIC PARK</span><span>NO. 274</span><span>TUE 30 SEP 2026</span></div>
+      <div class="rule3"></div>
+      <div class="hero">
+        <div class="n">4.3<span class="u">ft</span></div>
+        <div class="hand">rising,<br>2h to slack</div>
+      </div>
+      <div class="rule1"></div>
+      <div class="figcap"><span>FIG. 1 — TIDE &amp; GATE CURRENT, 24 H</span><span>MLLW</span></div>
+    </div>
+    <svg id="s4" width="338" height="178" style="margin:8px 26px 0"></svg>
+    <div class="pad">
+      <div class="rule1" style="margin-top:9px"></div>
+      <dl>
+        <dt>Water</dt><dd>61.2 °F <em>Richmond · 08:54</em></dd>
+        <dt>Air</dt><dd>58 °F <em>UV 4, clear</em></dd>
+        <dt>Wind</dt><dd>12 mph W <em>gusting 18</em></dd>
+        <dt>Gate</dt><dd>2.1 kt ebb <em>easing · slack 11:42</em></dd>
+      </dl>
+      <div class="rule1"></div>
+      <ol>
+        <li><span class="i">i</span><span class="nm">The Cove</span><span class="ld"></span><span class="vd">swim</span></li>
+        <li><span class="i">ii</span><span class="nm">West, to Fort Mason</span><span class="ld"></span><span class="vd">swim</span></li>
+        <li class="off"><span class="i">iii</span><span class="nm">East, to the Wharf</span><span class="ld"></span><span class="vd">wait</span></li>
+      </ol>
+      <div class="rule3" style="margin-top:auto"></div>
+      <div class="folio b"><span>24 H / 72 H</span><span>TABLE</span><span>ROUTE</span></div>
+    </div>
+  </div>
+  <p class="note"><b style="color:#1b3bd8">The move:</b> same ingredients as B, but on a real grid with a real type scale — hanging definition list, leader dots, roman numerals, a numbered figure with a caption, folios top and bottom. The handwriting appears exactly once, where a margin note belongs. Warm white, black, your blue as the single spot.</p>
+</div>
+
+<!-- ========== 5 ========== -->
+<div class="slot">
+  <p class="cap">5 · TAPE <span>· the day slides past a fixed index</span></p>
+  <div class="phone T">
+    <div class="chassis">
+      <div class="brand"><span>AQUATIC PARK</span><span>TIDE · GATE · AIR</span></div>
+      <div class="panel">
+        <div class="pl">HEIGHT · FT MLLW</div>
+        <div class="lcd"><span class="ghost">88.8</span><span class="real">4.3</span></div>
+        <div class="pr"><div class="st">rising</div><div class="sm">09:24</div></div>
+      </div>
+      <div class="win">
+        <div class="wl">TIDE</div>
+        <svg id="s5a" width="342" height="118"></svg>
+        <div class="wl b">GATE · KT</div>
+        <svg id="s5b" width="342" height="66"></svg>
+        <div class="idx"></div>
+        <div class="tri"></div>
+      </div>
+      <div class="dials">
+        <div><div class="dk">WATER</div><div class="dv">61.2<i>°</i></div></div>
+        <div><div class="dk">AIR</div><div class="dv">58<i>°</i></div></div>
+        <div><div class="dk">WIND</div><div class="dv">12<i>W</i></div></div>
+        <div><div class="dk">UV</div><div class="dv">4</div></div>
+      </div>
+      <div class="plate">
+        <div class="pr2"><span class="led on"></span><span class="nm">COVE</span><span class="vl">SHELTERED</span></div>
+        <div class="pr2"><span class="led on"></span><span class="nm">WEST · FORT MASON</span><span class="vl">WITH EBB</span></div>
+        <div class="pr2 off"><span class="led"></span><span class="nm">EAST · WHARF</span><span class="vl">CHOP</span></div>
+      </div>
+      <div class="screws"><span>SLACK 11:42 · +2H18</span><span>24H ⬤ 72H ◯</span></div>
+    </div>
+  </div>
+  <p class="note"><b style="color:#d98326">The move:</b> stops pretending to be a chart and becomes an instrument. The tide tape slides <i>under</i> a stationary index line, so the live value is always dead centre and the edges fade out of the window. Warm chassis grey, dark recessed panels, amber readout with ghosted off-segments. Braun, not neon.</p>
+</div>
+
+<!-- ========== 6 ========== -->
+<div class="slot">
+  <p class="cap">6 · MOSAIC <span>· answer first — when do I swim</span></p>
+  <div class="phone M">
+    <div class="pad">
+      <div class="mast"><b>AQUATIC PARK</b><span>09:24</span></div>
+      <div class="ans">
+        <div class="k">BEST WINDOW TODAY</div>
+        <div class="v">11:10<span class="d">–</span>12:14</div>
+        <div class="w">slack, 2.1 kt easing, wind under 10</div>
+      </div>
+      <div class="now">
+        <div><div class="k">NOW · 4.3 FT</div><div class="v2">rising</div></div>
+        <div style="margin-left:auto;text-align:right"><div class="k">WATER</div><div class="v2">61.2°</div></div>
+        <div style="text-align:right"><div class="k">AIR / WIND</div><div class="v2">58° · 12 W</div></div>
+      </div>
+      <div class="gl"><span>FIVE DAYS · HOUR BY HOUR</span><span>GOOD ■ FAIR ▨ POOR □</span></div>
+    </div>
+    <svg id="s6" width="338" height="214" style="margin:6px 26px 0"></svg>
+    <div class="pad">
+      <div class="gl b"><span>TIDE, TODAY</span><span>SLACK 11:42 · 17:55</span></div>
+      <svg id="s6b" width="338" height="62" style="margin:6px 0 0"></svg>
+      <div class="rt"><span class="sw" style="background:#0f6b6b"></span><span class="nm">Cove</span><span class="sub">ALL DAY</span></div>
+      <div class="rt"><span class="sw" style="background:#0f6b6b"></span><span class="nm">West → Fort Mason</span><span class="sub">11:10 – 13:40</span></div>
+      <div class="rt"><span class="sw" style="background:#d8d3c6"></span><span class="nm off">East → Wharf</span><span class="sub">AFTER 15:00</span></div>
+      <div class="foot"><span>TABLE · ROUTE</span><span>5D / 24H</span></div>
+    </div>
+  </div>
+  <p class="note"><b style="color:#0f6b6b">The move:</b> reframes the whole app around the actual question. The headline is a time window, not a number. Five days × 24 hours as an inked grid of swim quality — you find next Saturday's good morning without reading anything. The tide curve demotes to a figure at the bottom where it belongs.</p>
+</div>
+
+</div>
+<style>
+/* ============ 4 · PRESS ============ */
+.P{background:#faf7f0;color:#121212;padding:50px 0 24px;display:flex;flex-direction:column;position:relative;
+  font-family:'Baskerville',Georgia,serif}
+.P .pcol{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 25px,#1b3bd80d 25px 26px);
+  background-position:26px 0}
+.P .pad{padding:0 26px;position:relative;z-index:2}
+.P .pad:last-of-type{flex:1;display:flex;flex-direction:column}
+.P .folio{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.8px;
+  letter-spacing:.2em;text-transform:uppercase;color:#121212}
+.P .folio.b{color:#6d6a62;padding-top:7px}
+.P .rule3{height:3px;background:#121212;margin:7px 0 0}
+.P .rule1{height:1px;background:#121212;opacity:.22;margin:11px 0 0}
+.P .hero{display:flex;align-items:flex-start;margin:16px 0 2px}
+.P .hero .n{font-family:'Didot','Bodoni 72',serif;font-size:116px;line-height:.74;letter-spacing:-.035em}
+.P .hero .n .u{font-size:21px;letter-spacing:0;font-style:italic;margin-left:5px;vertical-align:28px}
+.P .hero .hand{font-family:'Hand',cursive;font-size:25px;line-height:1.1;color:#1b3bd8;
+  margin-left:auto;text-align:right;padding-top:10px;transform:rotate(-1.6deg)}
+.P .figcap{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.8px;
+  letter-spacing:.17em;color:#6d6a62;padding-top:7px}
+.P dl{display:grid;grid-template-columns:72px 1fr;margin:11px 0 0;align-items:baseline}
+.P dt{font-family:var(--mono);font-size:8px;letter-spacing:.15em;text-transform:uppercase;
+  color:#6d6a62;padding:6.5px 0}
+.P dd{font-size:17px;padding:5px 0;border-bottom:1px solid #1212120f}
+.P dd em{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;font-style:normal;
+  color:#6d6a62;text-transform:uppercase;margin-left:7px}
+.P ol{list-style:none;margin:10px 0 0}
+.P li{display:flex;align-items:baseline;gap:9px;padding:7.5px 0}
+.P li .i{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:#1b3bd8;width:17px}
+.P li .nm{font-size:17px}
+.P li .ld{flex:1;border-bottom:1px dotted #12121240;transform:translateY(-3px)}
+.P li .vd{font-family:var(--mono);font-size:8.5px;letter-spacing:.17em;text-transform:uppercase;color:#1b3bd8}
+.P li.off .nm{color:#8b887f}
+.P li.off .i,.P li.off .vd{color:#8b887f}
+
+/* ============ 5 · TAPE ============ */
+.T{background:#c7c4ba;padding:0;font-family:var(--mono)}
+.T .chassis{height:100%;padding:52px 24px 26px;display:flex;flex-direction:column;
+  background:linear-gradient(160deg,#d0cdc3,#bdbab0)}
+.T .brand{display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:.24em;
+  color:#4a4e40;text-shadow:0 1px 0 #ddd9cf}
+.T .panel{margin:13px 0 0;background:#23271d;border-radius:3px;padding:13px 15px 14px;display:flex;
+  align-items:flex-end;box-shadow:inset 0 2px 5px #0006,0 1px 0 #ddd9cf}
+.T .pl{position:absolute;font-size:7.5px;letter-spacing:.18em;color:#7e8a6a;transform:translateY(-4px)}
+.T .lcd{position:relative;margin-top:11px}
+.T .lcd .ghost{font-family:'DIN Alternate','Avenir Next',sans-serif;font-size:62px;color:#e8a33d;
+  opacity:.1;letter-spacing:.02em}
+.T .lcd .real{position:absolute;left:0;top:0;font-family:'DIN Alternate','Avenir Next',sans-serif;
+  font-size:62px;color:#e8a33d;letter-spacing:.02em;text-shadow:0 0 14px #e8a33d55}
+.T .pr{margin-left:auto;text-align:right}
+.T .pr .st{font-family:'Hand',cursive;font-size:27px;color:#e8a33d}
+.T .pr .sm{font-size:8.5px;letter-spacing:.16em;color:#7e8a6a;margin-top:4px}
+.T .win{position:relative;margin:14px 0 0;background:#23271d;border-radius:3px;padding:9px 0 10px;
+  box-shadow:inset 0 2px 5px #0006,0 1px 0 #ddd9cf;overflow:hidden}
+.T .wl{font-size:7.5px;letter-spacing:.18em;color:#7e8a6a;padding:0 0 4px 15px}
+.T .wl.b{padding-top:9px;border-top:1px solid #333827}
+.T .idx{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#d9593a;opacity:.9}
+.T .tri{position:absolute;left:50%;top:0;width:0;height:0;margin-left:-4px;
+  border-left:4px solid transparent;border-right:4px solid transparent;border-top:6px solid #d9593a}
+.T .dials{display:flex;margin:15px 0 0;gap:1px}
+.T .dials>div{flex:1;background:#bfbcb2;border-radius:2px;padding:9px 0 10px 10px;
+  box-shadow:inset 0 1px 2px #0002,0 1px 0 #ddd9cf}
+.T .dk{font-size:7px;letter-spacing:.16em;color:#5c6150;margin-bottom:4px}
+.T .dv{font-family:'DIN Alternate','Avenir Next',sans-serif;font-size:19px;color:#2a2e22}
+.T .dv i{font-style:normal;font-size:9px;color:#5c6150}
+.T .plate{margin:14px 0 0;background:#23271d;border-radius:3px;padding:4px 15px 5px;
+  box-shadow:inset 0 2px 5px #0006,0 1px 0 #ddd9cf}
+.T .pr2{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid #333827}
+.T .pr2:first-child{border-top:0}
+.T .led{width:7px;height:7px;border-radius:50%;background:#3c4231;box-shadow:inset 0 1px 1px #0008}
+.T .led.on{background:#e8a33d;box-shadow:0 0 7px #e8a33daa}
+.T .pr2 .nm{flex:1;font-size:10px;letter-spacing:.14em;color:#d6d2c4}
+.T .pr2 .vl{font-size:7.5px;letter-spacing:.15em;color:#7e8a6a}
+.T .pr2.off .nm{color:#6b7161}
+.T .screws{margin-top:auto;display:flex;justify-content:space-between;font-size:8px;
+  letter-spacing:.17em;color:#5c6150;text-shadow:0 1px 0 #ddd9cf}
+
+/* ============ 6 · MOSAIC ============ */
+.M{background:#f4f1e8;color:#16161a;padding:52px 0 26px;display:flex;flex-direction:column;
+  font-family:'Avenir Next','Helvetica Neue',sans-serif}
+.M .pad{padding:0 26px}
+.M .pad:last-of-type{flex:1;display:flex;flex-direction:column}
+.M .mast{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+  font-size:9px;letter-spacing:.2em;color:#8a8679;border-bottom:1.5px solid #16161a;padding-bottom:7px}
+.M .mast b{color:#16161a;font-weight:400;letter-spacing:.26em}
+.M .ans{margin:20px 0 0}
+.M .ans .k{font-family:var(--mono);font-size:8px;letter-spacing:.2em;color:#8a8679}
+.M .ans .v{font-family:'Avenir Next Condensed','Avenir Next',sans-serif;font-weight:600;
+  font-size:58px;line-height:1.02;letter-spacing:-.025em;color:#0f6b6b;margin:5px 0 0}
+.M .ans .v .d{color:#c3bfb0;margin:0 2px}
+.M .ans .w{font-family:'Hand',cursive;font-size:23px;color:#16161a;margin-top:2px}
+.M .now{display:flex;gap:22px;align-items:flex-end;margin:17px 0 0;border-top:1px solid #16161a1f;padding-top:11px}
+.M .now .k{font-family:var(--mono);font-size:7.8px;letter-spacing:.16em;color:#8a8679;margin-bottom:4px}
+.M .now .v2{font-size:16px;letter-spacing:-.01em}
+.M .gl{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.8px;
+  letter-spacing:.16em;color:#8a8679;border-top:1px solid #16161a;margin-top:16px;padding-top:6px}
+.M .gl.b{margin-top:13px}
+.M .rt{display:flex;align-items:center;gap:11px;padding:8.5px 0;border-top:1px solid #16161a1f;
+  font-family:var(--mono)}
+.M .rt .sw{width:11px;height:11px}
+.M .rt .nm{flex:1;font-family:'Avenir Next',sans-serif;font-size:13.5px;letter-spacing:.01em}
+.M .rt .nm.off{color:#908c80}
+.M .rt .sub{font-size:8px;letter-spacing:.15em;color:#8a8679}
+.M .foot{margin-top:auto;display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:8.5px;letter-spacing:.17em;color:#8a8679;border-top:1.5px solid #16161a;padding-top:8px}
+</style>
+<script>
+const TAU=Math.PI*2, NOW=9.4, NS='http://www.w3.org/2000/svg';
+const tideD=(h,d=0)=>{const A=1+0.17*Math.sin(d*0.55);
+  return 3.0+2.4*A*Math.sin(TAU*(h-9.1-0.84*d)/12.42)+0.75*Math.sin(TAU*(h-5-0.84*d)/24.84);};
+const curD=(h,d=0)=>2.55*(1+0.15*Math.sin(d*0.55))*Math.sin(TAU*(h-14.1-0.84*d)/12.42);
+const tide=h=>tideD(h,0), cur=h=>curD(h,0);
+let LO=99,HI=-99; for(let h=0;h<=24;h+=.05){LO=Math.min(LO,tide(h));HI=Math.max(HI,tide(h));}
+function E(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function TX(s,x,y,t,a={}){const e=E('text',Object.assign({x,y,'font-family':'ui-monospace,monospace',
+  'font-size':8,'letter-spacing':1.3},a));e.textContent=t;s.appendChild(e);return e;}
+const S=id=>{const s=document.getElementById(id);s.innerHTML='';return s;};
+
+/* ---------- 1 · SPECTRO ---------- */
+(()=>{const s=S('s1'),W=338,INK='#121214',OX='#c2301a',N=96,bw=2.2,gap=(W-N*bw)/(N-1);
+  const base=100, amp=94, mid=152, ks=13.5;
+  for(let i=0;i<N;i++){const h=i*24/N, x=i*(bw+gap), slack=(h>11.17&&h<12.23);
+    const t=(tide(h)-LO)/(HI-LO)*amp+3;
+    s.appendChild(E('rect',{x,y:base-t,width:bw,height:t,fill:slack?OX:INK,opacity:slack?1:.82}));
+    const v=cur(h), cl=Math.abs(v)*ks;
+    s.appendChild(E('rect',{x,y:v>0?mid-cl:mid,width:bw,height:Math.max(cl,.8),
+      fill:v>0?INK:OX,opacity:.72}));}
+  s.appendChild(E('line',{x1:0,x2:W,y1:base,y2:base,stroke:INK,'stroke-width':1}));
+  s.appendChild(E('line',{x1:0,x2:W,y1:mid,y2:mid,stroke:INK,'stroke-width':.6,opacity:.45}));
+  [[0,'00'],[6,'06'],[12,'12'],[18,'18'],[24,'24']].forEach(([h,l])=>{const x=h/24*W;
+    s.appendChild(E('line',{x1:x,x2:x,y1:base,y2:base+4,stroke:INK,'stroke-width':1}));
+    TX(s,Math.min(Math.max(x,8),W-8),base+14,l,{fill:'#7a766d','text-anchor':'middle'});});
+  const mx=NOW/24*W;
+  s.appendChild(E('line',{x1:mx,x2:mx,y1:-6,y2:base,stroke:OX,'stroke-width':1}));
+  s.appendChild(E('polygon',{points:`${mx-4},-6 ${mx+4},-6 ${mx},0`,fill:OX}));
+  TX(s,11.7/24*W,-10,'SLACK',{fill:OX,'text-anchor':'middle','font-size':7.5});})();
+
+/* ---------- 2 · RIDGELINE ---------- */
+(()=>{const s=S('s2'),W=342,L=36,PW=W-L,CR='#f3eee0',OR='#f0612a',BG='#0d1330';
+  const days=['TUE','WED','THU','FRI','SAT','SUN','MON'];
+  for(let d=6;d>=0;d--){const y0=258-d*27, amp=58;
+    let lo=99,hi=-99; for(let h=0;h<=24;h+=.1){lo=Math.min(lo,tideD(h,d));hi=Math.max(hi,tideD(h,d));}
+    let p='';
+    for(let h=0;h<=24;h+=.15){const x=L+h/24*PW, y=y0-(tideD(h,d)-LO)/(HI-LO)*amp;
+      p+=(p?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';}
+    const fill=p+`L${W} ${y0+2} L${L} ${y0+2} Z`;
+    s.appendChild(E('path',{d:fill,fill:d?BG:'#f0612a',opacity:d?1:.13}));
+    s.appendChild(E('path',{d:p,fill:'none',stroke:d?CR:OR,'stroke-width':d?1:2.1,
+      opacity:d?Math.max(.22,.72-d*.09):1,'stroke-linejoin':'round'}));
+    TX(s,0,y0-1,d?days[d]:'TODAY',{fill:d?'#6e7ba8':OR,'font-size':7.6,
+      opacity:d?Math.max(.45,1-d*.1):1});}
+  const mx=L+NOW/24*PW;
+  s.appendChild(E('line',{x1:mx,x2:mx,y1:26,y2:268,stroke:CR,'stroke-width':.8,opacity:.3}));
+  s.appendChild(E('circle',{cx:mx,cy:258-(tide(NOW)-LO)/(HI-LO)*58,r:4.5,fill:OR}));
+  s.appendChild(E('line',{x1:L,x2:W,y1:276,y2:276,stroke:'#222b52','stroke-width':1}));
+  [[0,'00'],[6,'06'],[12,'12'],[18,'18'],[24,'24']].forEach(([h,l])=>
+    TX(s,L+h/24*PW,289,l,{fill:'#6e7ba8','text-anchor':'middle','font-size':7.6}));})();
+
+/* ---------- 3 · WATERLINE ---------- */
+(()=>{const s=S('s3'),W=390,H=844,SEA='#0a2730',PALE='#dfe7ea';
+  const yF=v=>566-(v-LO)/(HI-LO)*268;
+  const wy=yF(tide(NOW)); document.getElementById('sea').style.height=(H-wy)+'px';
+  let w=`M0 ${wy}`;
+  for(let x=0;x<=W;x+=6) w+=` L${x} ${(wy+Math.sin(x/46)*3.2+Math.sin(x/17)*1.1).toFixed(1)}`;
+  s.appendChild(E('path',{d:w+` L${W} ${H} L0 ${H} Z`,fill:SEA}));
+  let t='';for(let h=0;h<=24;h+=.15){t+=(t?'L':'M')+(h/24*W).toFixed(1)+' '+yF(tide(h)).toFixed(1)+' ';}
+  s.appendChild(E('path',{d:t,fill:'none',stroke:PALE,'stroke-width':1.1,opacity:.3,
+    'stroke-dasharray':'1 4'}));
+  const px=352;
+  s.appendChild(E('line',{x1:px,x2:px,y1:yF(HI)-26,y2:yF(LO)+26,stroke:'#7fa0aa','stroke-width':1,opacity:.8}));
+  for(let v=0;v<=8;v+=.5){const y=yF(v); if(y<yF(HI)-26||y>yF(LO)+26) continue;
+    const maj=v%2===0;
+    s.appendChild(E('line',{x1:px,x2:px+(maj?13:7),y1:y,y2:y,stroke:'#7fa0aa',
+      'stroke-width':maj?1.2:.8,opacity:.85}));
+    if(maj) TX(s,px-5,y+3,v+'',{fill:'#7fa0aa','text-anchor':'end','font-size':7.6,opacity:.9});}
+  s.appendChild(E('polygon',{points:`${px-16},${wy-6} ${px-16},${wy+6} ${px-5},${wy}`,fill:'#ff6b4a'}));
+  for(let i=0;i<4;i++){const y=wy+22+i*17;
+    s.appendChild(E('line',{x1:0,x2:W,y1:y,y2:y,stroke:PALE,'stroke-width':.7,opacity:.1-i*.02}));}
+  TX(s,26,wy-11,'SURFACE · 09:24',{fill:'#ff6b4a','font-size':7.8,'letter-spacing':1.6});})();
+
+/* ---------- 4 · PRESS ---------- */
+(()=>{const s=S('s4'),W=338,INK='#121212',BL='#1b3bd8',base=112,amp=100,mid=156,ks=13;
+  const dfs=E('defs');const pat=E('pattern',{id:'ht',width:4,height:4,patternUnits:'userSpaceOnUse'});
+  pat.appendChild(E('circle',{cx:1.4,cy:1.4,r:1.05,fill:BL,opacity:.55}));dfs.appendChild(pat);
+  s.appendChild(dfs);
+  for(let i=1;i<3;i++){const y=12+(base-12)*i/3;
+    s.appendChild(E('line',{x1:0,x2:W,y1:y,y2:y,stroke:INK,'stroke-width':.6,opacity:.13}));}
+  let p='';for(let h=0;h<=24;h+=.1){p+=(p?'L':'M')+(h/24*W).toFixed(1)+' '
+    +(base-(tide(h)-LO)/(HI-LO)*amp).toFixed(1)+' ';}
+  s.appendChild(E('path',{d:p+`L${W} ${base} L0 ${base} Z`,fill:'url(#ht)'}));
+  s.appendChild(E('path',{d:p,fill:'none',stroke:INK,'stroke-width':1.7}));
+  s.appendChild(E('rect',{x:11.17/24*W,y:4,width:(12.23-11.17)/24*W,height:base-4,fill:BL,opacity:.1}));
+  TX(s,11.7/24*W,0,'SLACK',{fill:BL,'text-anchor':'middle','font-size':7.2});
+  s.appendChild(E('line',{x1:0,x2:W,y1:base,y2:base,stroke:INK,'stroke-width':1.2}));
+  [[0,'MIDNIGHT'],[6,'6 AM'],[12,'NOON'],[18,'6 PM']].forEach(([h,l])=>{const x=h/24*W;
+    s.appendChild(E('line',{x1:x,x2:x,y1:base,y2:base+4,stroke:INK,'stroke-width':1}));
+    TX(s,x+4,base+13,l,{fill:'#6d6a62','font-size':7.2,'letter-spacing':1.4});});
+  for(let i=0;i<72;i++){const h=i*24/72,x=i*(W/72),v=curD(h),cl=Math.abs(v)*ks;
+    s.appendChild(E('rect',{x,y:v>0?mid-cl:mid,width:W/72-1.3,height:Math.max(cl,.7),
+      fill:v>0?INK:BL,opacity:.72}));}
+  s.appendChild(E('line',{x1:0,x2:W,y1:mid,y2:mid,stroke:INK,'stroke-width':.6,opacity:.35}));
+  TX(s,0,mid+28,'FLOOD ABOVE · EBB BELOW · 0–3 KT',{fill:'#6d6a62','font-size':7.2,'letter-spacing':1.4});
+  const mx=NOW/24*W;
+  s.appendChild(E('line',{x1:mx,x2:mx,y1:4,y2:base,stroke:INK,'stroke-width':1}));
+  s.appendChild(E('circle',{cx:mx,cy:base-(tide(NOW)-LO)/(HI-LO)*amp,r:3.6,fill:INK}));})();
+
+/* ---------- 5 · TAPE ---------- */
+function tape(id,h,kind){const s=S(id),W=342,cx=W/2,SPAN=12,AM='#e8a33d',GR='#39402f',DK='#23271d';
+  const X=hr=>cx+(hr-NOW)/SPAN*W;
+  for(let hr=Math.floor(NOW-6);hr<=Math.ceil(NOW+6);hr++){const x=X(hr);if(x<-4||x>W+4)continue;
+    const maj=hr%2===0;
+    s.appendChild(E('line',{x1:x,x2:x,y1:kind=='tide'?8:4,y2:h-14,stroke:GR,'stroke-width':maj?1:.6}));
+    if(maj) TX(s,x,h-3,((hr+24)%24+'').padStart(2,'0'),{fill:'#7e8a6a','text-anchor':'middle','font-size':7.4});}
+  if(kind=='tide'){const base=h-18,amp=h-40;
+    let p='';for(let hr=NOW-6.4;hr<=NOW+6.4;hr+=.08){
+      p+=(p?'L':'M')+X(hr).toFixed(1)+' '+(base-(tide(hr)-LO)/(HI-LO)*amp).toFixed(1)+' ';}
+    s.appendChild(E('path',{d:p+` L${W+20} ${base+6} L-20 ${base+6} Z`,fill:AM,opacity:.13}));
+    s.appendChild(E('path',{d:p,fill:'none',stroke:AM,'stroke-width':2,'stroke-linecap':'round'}));
+    [3,4.5,6].forEach(v=>{const y=base-(v-LO)/(HI-LO)*amp;
+      s.appendChild(E('line',{x1:0,x2:W,y1:y,y2:y,stroke:GR,'stroke-width':.6}));
+      TX(s,5,y-3,v.toFixed(1),{fill:'#7e8a6a','font-size':7});});
+  }else{const mid=h/2-4,ks=9;
+    for(let hr=NOW-6.4;hr<=NOW+6.4;hr+=.12){const x=X(hr),v=curD(hr),cl=Math.abs(v)*ks;
+      s.appendChild(E('rect',{x,y:v>0?mid-cl:mid,width:2,height:Math.max(cl,.8),fill:AM,opacity:.72}));}
+    s.appendChild(E('line',{x1:0,x2:W,y1:mid,y2:mid,stroke:'#d9593a','stroke-width':.9,opacity:.7}));
+    TX(s,5,mid-5,'FLOOD',{fill:'#7e8a6a','font-size':6.8});TX(s,5,mid+11,'EBB',{fill:'#7e8a6a','font-size':6.8});}
+  const g=E('defs'),lg=E('linearGradient',{id:id+'f',x1:0,x2:1});
+  [[0,1],[.11,0],[.89,0],[1,1]].forEach(([o,op])=>lg.appendChild(
+    E('stop',{offset:o,'stop-color':DK,'stop-opacity':op})));
+  g.appendChild(lg);s.appendChild(g);
+  s.appendChild(E('rect',{x:0,y:0,width:W,height:h,fill:'url(#'+id+'f)'}));}
+tape('s5a',118,'tide'); tape('s5b',66,'cur');
+
+/* ---------- 6 · MOSAIC ---------- */
+(()=>{const s=S('s6'),W=338,L=38,PW=W-L,cw=PW/24-1.5,rh=30,gap=7,TL='#0f6b6b',INK='#16161a';
+  const dfs=E('defs'),p=E('pattern',{id:'hx',width:4,height:4,patternUnits:'userSpaceOnUse',
+    patternTransform:'rotate(45)'});
+  p.appendChild(E('rect',{width:1.5,height:4,fill:TL,opacity:.55}));dfs.appendChild(p);s.appendChild(dfs);
+  const labs=['TODAY','WED','THU','FRI','SAT'];
+  for(let d=0;d<5;d++){const y=14+d*(rh+gap);
+    TX(s,0,y+rh/2+3,labs[d],{fill:d?'#8a8679':INK,'font-size':7.4});
+    for(let hr=0;hr<24;hr++){const x=L+hr*(PW/24), night=hr<7||hr>19;
+      const q=1-Math.min(1,Math.abs(curD(hr+.5,d))/2.15);
+      const lvl=night?0:(q>.6?3:q>.28?2:1);
+      if(lvl===3) s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:TL}));
+      else if(lvl===2) s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:'url(#hx)'}));
+      else s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:'none',stroke:INK,
+        'stroke-width':.7,opacity:night?.12:.3}));}}
+  [[6,'06'],[12,'12'],[18,'18']].forEach(([hr,l])=>
+    TX(s,L+hr*(PW/24)+cw/2,206,l,{fill:'#8a8679','text-anchor':'middle','font-size':7.4}));
+  const bx=L+11*(PW/24)-1.5;
+  s.appendChild(E('rect',{x:bx,y:11,width:(PW/24)*2+cw-1,height:rh+6,fill:'none',
+    stroke:INK,'stroke-width':1.4}));
+  TX(s,bx,8,'BEST',{fill:INK,'font-size':7});
+  const nx=L+9*(PW/24);
+  s.appendChild(E('line',{x1:nx,x2:nx,y1:8,y2:197,stroke:INK,'stroke-width':1,opacity:.5,
+    'stroke-dasharray':'2 3'}));})();
+(()=>{const s=S('s6b'),W=338,INK='#16161a',TL='#0f6b6b',base=44,amp=38;
+  let p='';for(let h=0;h<=24;h+=.1){p+=(p?'L':'M')+(h/24*W).toFixed(1)+' '
+    +(base-(tide(h)-LO)/(HI-LO)*amp).toFixed(1)+' ';}
+  s.appendChild(E('path',{d:p,fill:'none',stroke:INK,'stroke-width':1.4}));
+  [11.7,17.9].forEach(hr=>{const x=hr/24*W;
+    s.appendChild(E('line',{x1:x,x2:x,y1:2,y2:base,stroke:TL,'stroke-width':1.4}));
+    TX(s,x+4,10,'SLACK',{fill:TL,'font-size':6.8});});
+  s.appendChild(E('line',{x1:0,x2:W,y1:base,y2:base,stroke:INK,'stroke-width':.8,opacity:.3}));
+  const mx=NOW/24*W;
+  s.appendChild(E('circle',{cx:mx,cy:base-(tide(NOW)-LO)/(HI-LO)*amp,r:3.4,fill:INK}));
+  [[0,'00'],[12,'12'],[24,'24']].forEach(([h,l])=>
+    TX(s,Math.min(Math.max(h/24*W,7),W-7),58,l,{fill:'#8a8679','text-anchor':'middle','font-size':7.2}));})();
+</script></body></html>

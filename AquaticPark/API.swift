@@ -108,7 +108,7 @@ enum API {
             "temperature_unit": "fahrenheit",
             "wind_speed_unit": "mph",
             "timezone": zone.identifier,
-            "forecast_days": "4",
+            "forecast_days": "5",
         ].map(URLQueryItem.init(name:value:))
 
         let hourly = try await get(components.url!, as: WeatherResponse.self).hourly
@@ -154,7 +154,7 @@ enum API {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = zone
         let today = Date()
-        let end = calendar.date(byAdding: .day, value: 3, to: today)!
+        let end = calendar.date(byAdding: .day, value: 4, to: today)!
         return (dayFormatter.string(from: today), dayFormatter.string(from: end))
     }
 

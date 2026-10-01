@@ -1,0 +1,254 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Aquatic Park — round 3</title>
+<style>
+@font-face{font-family:'Hand';src:url('me1.ttf') format('truetype')}
+:root{--mono:ui-monospace,'SF Mono',Menlo,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#141416;color:#86868e;font-family:var(--mono);padding:46px 40px 90px}
+h1{font-size:12px;letter-spacing:.22em;color:#f0f0ee;font-weight:400;margin-bottom:8px}
+.sub{font-size:11px;line-height:1.75;max-width:800px;margin-bottom:46px}
+.sub b{color:#f0f0ee;font-weight:400}
+.rail{display:flex;gap:46px;flex-wrap:wrap;align-items:flex-start}
+.slot{width:390px}
+.cap{font-size:10px;letter-spacing:.18em;color:#f0f0ee;margin-bottom:5px}
+.cap span{color:#696971;letter-spacing:.05em}
+.note{font-size:10.5px;line-height:1.7;margin:11px 2px 0;color:#7d7d85}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;
+  box-shadow:0 0 0 1px #2c2c32,0 30px 70px rgba(0,0,0,.6)}
+svg{display:block;overflow:visible}
+
+/* ---------- shared frame ---------- */
+.f{background:var(--paper);color:var(--ink);padding:52px 0 24px;
+  display:flex;flex-direction:column;position:relative;font-family:var(--body)}
+.f .pad{padding:0 26px;position:relative;z-index:2}
+.f .last{flex:1;display:flex;flex-direction:column}
+.f .mast{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--mono);
+  font-size:8.6px;letter-spacing:.2em;color:var(--mute);padding-bottom:7px;
+  border-bottom:var(--rw) solid var(--ink)}
+.f .mast b{color:var(--ink);font-weight:400;letter-spacing:.26em}
+
+/* hero */
+.f .hero{margin:17px 0 0}
+.f .kk{font-family:var(--mono);font-size:7.8px;letter-spacing:.2em;color:var(--mute)}
+.f .rtname{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--spot);margin:7px 0 1px}
+.f .win{font-family:var(--disp);font-weight:var(--dw);font-size:54px;line-height:1.0;
+  letter-spacing:var(--dls);color:var(--ink)}
+.f .win .d{color:var(--mute);margin:0 1px;font-weight:400}
+.f .why{font-size:13px;line-height:1.35;color:var(--mute);margin-top:7px;max-width:290px}
+.f .why.hand{font-family:'Hand',cursive;font-size:22px;color:var(--spot);line-height:1.1;max-width:270px}
+.f .cd{font-family:var(--disp);font-weight:var(--dw);font-size:76px;line-height:.92;
+  letter-spacing:var(--dls);margin:3px 0 0}
+.f .cd i{font-style:normal;font-family:var(--mono);font-size:15px;letter-spacing:.1em;color:var(--mute)}
+.f .two{display:flex;gap:0;margin-top:9px}
+.f .two>div{flex:1;border-left:1px solid var(--hair);padding-left:12px}
+.f .two>div:first-child{border-left:0;padding-left:0}
+.f .two .w2{font-family:var(--disp);font-weight:var(--dw);font-size:31px;line-height:1.05;
+  letter-spacing:var(--dls);margin:5px 0 3px}
+.f .two .w2.off{color:var(--mute)}
+.f .two .s2{font-family:var(--mono);font-size:7.6px;letter-spacing:.13em;color:var(--mute);line-height:1.65}
+
+/* now strip */
+.f .now{display:flex;margin:15px 0 0;border-top:1px solid var(--hair);padding-top:11px}
+.f .now>div{flex:1}
+.f .now .k{font-family:var(--mono);font-size:7.6px;letter-spacing:.16em;color:var(--mute);margin-bottom:5px}
+.f .now .v{font-family:var(--num);font-size:19px;letter-spacing:-.015em;line-height:1}
+.f .now .v i{font-style:normal;font-family:var(--mono);font-size:9px;color:var(--mute);letter-spacing:.05em}
+.f .now .v.st{font-family:'Hand',cursive;font-size:22px;color:var(--spot);line-height:.86}
+
+/* figure captions */
+.f .figcap{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.6px;
+  letter-spacing:.17em;color:var(--mute);border-top:1px solid var(--ink);padding-top:6px;margin-top:15px}
+
+/* routes — SPECTRO rows */
+.f .rt{display:flex;align-items:baseline;gap:9px;padding:8px 0;border-top:1px solid var(--hair);
+  font-family:var(--mono);font-size:8.2px;letter-spacing:.14em;color:var(--mute)}
+.f .rt .nm{flex:1;font-family:var(--body);font-size:15px;letter-spacing:.01em;
+  font-weight:var(--nw);color:var(--ink)}
+.f .rt .nm.off{color:var(--mute)}
+.f .rt .vd{font-weight:600;color:var(--spot)}
+.f .rt .vd.no{color:var(--mute);font-weight:400}
+.f .foot{margin-top:auto;display:flex;justify-content:space-between;font-family:var(--mono);
+  font-size:8.4px;letter-spacing:.17em;color:var(--mute);border-top:var(--rw) solid var(--ink);padding-top:8px}
+.f .grid{position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0 25px,var(--hair) 25px 25.7px);
+  background-position:26px 0;opacity:.5}
+
+/* palettes */
+.BONE{--paper:#ece8e0;--ink:#121214;--mute:#7a766d;--spot:#c2301a;--hair:#cdc8bc;--rw:2.5px;
+  --disp:'Didot','Bodoni 72',serif;--dw:400;--dls:-.02em;--num:'Didot',serif;
+  --body:'Avenir Next Condensed','Avenir Next',sans-serif;--nw:500}
+.PRESS{--paper:#faf7f0;--ink:#121212;--mute:#6d6a62;--spot:#1b3bd8;--hair:#1212121f;--rw:3px;
+  --disp:'Didot','Bodoni 72',serif;--dw:400;--dls:-.025em;--num:'Didot',serif;
+  --body:'Baskerville',Georgia,serif;--nw:400}
+.TEAL{--paper:#f4f1e8;--ink:#16161a;--mute:#8a8679;--spot:#0f6b6b;--hair:#16161a21;--rw:1.5px;
+  --disp:'Avenir Next Condensed','Avenir Next',sans-serif;--dw:600;--dls:-.025em;
+  --num:'Avenir Next',sans-serif;--body:'Avenir Next',sans-serif;--nw:500}
+.NIGHT{--paper:#10121a;--ink:#ece7d9;--mute:#6f7389;--spot:#e0a33c;--hair:#252936;--rw:1.5px;
+  --disp:'Didot','Bodoni 72',serif;--dw:400;--dls:-.02em;--num:'Didot',serif;
+  --body:'Avenir Next Condensed','Avenir Next',sans-serif;--nw:500}
+.RISO{--paper:#efe9dc;--ink:#14233d;--mute:#6d7b93;--spot:#ff5a1f;--hair:#14233d2b;--rw:2.5px;
+  --disp:'Avenir Next Condensed','Avenir Next',sans-serif;--dw:700;--dls:-.03em;
+  --num:'Avenir Next Condensed',sans-serif;--body:'Avenir Next Condensed','Avenir Next',sans-serif;--nw:600}
+.ALM{--paper:#efe9dd;--ink:#14160f;--mute:#767a63;--spot:#45611f;--hair:#14160f24;--rw:2px;
+  --disp:'Didot','Bodoni 72',serif;--dw:400;--dls:-.02em;--num:'Didot',serif;
+  --body:'Baskerville',Georgia,serif;--nw:400}
+</style></head><body>
+<h1>AQUATIC PARK — ROUND 3 · ONE LAYOUT, SIX TREATMENTS</h1>
+<p class="sub">Converged on <b>6's structure</b> with your four fixes: <b>tide figure moved above</b> the five-day chart and <b>set in 4's style</b> (halftone duotone area, ink stroke, Gate current strip below, numbered figure caption); <b>routes set as 1's rows</b> (name / condition / verdict); and the headline now answers <b>the next big swim, west or east</b> — the Cove is never the hero because you don't need an app to decide to swim in the Cove. The five-day mosaic is now scored for W/E conditions specifically, not general swimmability.<br><br>Three headline treatments, each shown twice in different skins so you can judge the idea apart from the palette: <b>WINDOW</b> (the time range is the hero), <b>COUNTDOWN</b> (how long until it opens), <b>BOTH</b> (west and east side by side). Two of them add a day ribbon under the headline showing where the window sits in the day.</p>
+<div class="rail" id="rail"></div>
+<script>
+const TAU=Math.PI*2, NOW=9.4, NS='http://www.w3.org/2000/svg';
+const tideD=(h,d=0)=>{const A=1+0.17*Math.sin(d*0.55);
+  return 3.0+2.4*A*Math.sin(TAU*(h-9.1-0.84*d)/12.42)+0.75*Math.sin(TAU*(h-5-0.84*d)/24.84);};
+const curD=(h,d=0)=>2.55*(1+0.15*Math.sin(d*0.55))*Math.sin(TAU*(h-14.1-0.84*d)/12.42);
+const tide=h=>tideD(h,0);
+let LO=99,HI=-99; for(let h=0;h<=24;h+=.05){LO=Math.min(LO,tide(h));HI=Math.max(HI,tide(h));}
+function E(n,a){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+function TX(s,x,y,t,a={}){const e=E('text',Object.assign({x,y,'font-family':'ui-monospace,monospace',
+  'font-size':7.6,'letter-spacing':1.3},a));e.textContent=t;s.appendChild(e);return e;}
+
+/* ---------- FIG 1 · tide + gate, PRESS treatment ---------- */
+function tideFig(s,p,i){
+  const W=338,base=92,amp=82,mid=134,ks=8.6;
+  const d=E('defs'),pat=E('pattern',{id:'ht'+i,width:4,height:4,patternUnits:'userSpaceOnUse'});
+  pat.appendChild(E('circle',{cx:1.4,cy:1.4,r:1.05,fill:p.spot,opacity:.6}));
+  d.appendChild(pat);s.appendChild(d);
+  for(let k=1;k<3;k++){const y=10+(base-10)*k/3;
+    s.appendChild(E('line',{x1:0,x2:W,y1:y,y2:y,stroke:p.ink,'stroke-width':.6,opacity:.14}));}
+  let c='';for(let h=0;h<=24;h+=.1)c+=(c?'L':'M')+(h/24*W).toFixed(1)+' '
+    +(base-(tide(h)-LO)/(HI-LO)*amp).toFixed(1)+' ';
+  s.appendChild(E('path',{d:c+`L${W} ${base} L0 ${base} Z`,fill:`url(#ht${i})`}));
+  s.appendChild(E('path',{d:c,fill:'none',stroke:p.ink,'stroke-width':1.7}));
+  // the W/E window, called out on the tide figure too
+  s.appendChild(E('rect',{x:11.17/24*W,y:4,width:(13.67-11.17)/24*W,height:base-4,
+    fill:p.spot,opacity:.13}));
+  TX(s,11.17/24*W+3,0,'WEST WINDOW',{fill:p.spot,'font-size':7});
+  s.appendChild(E('line',{x1:0,x2:W,y1:base,y2:base,stroke:p.ink,'stroke-width':1.2}));
+  [[0,'MIDNIGHT'],[6,'6 AM'],[12,'NOON'],[18,'6 PM']].forEach(([h,l])=>{const x=h/24*W;
+    s.appendChild(E('line',{x1:x,x2:x,y1:base,y2:base+4,stroke:p.ink,'stroke-width':1}));
+    TX(s,x+4,base+12,l,{fill:p.mute,'font-size':7,'letter-spacing':1.4});});
+  for(let k=0;k<72;k++){const h=k*24/72,x=k*(W/72),v=curD(h),cl=Math.abs(v)*ks;
+    s.appendChild(E('rect',{x,y:v>0?mid-cl:mid,width:W/72-1.3,height:Math.max(cl,.7),
+      fill:v>0?p.ink:p.spot,opacity:.72}));}
+  s.appendChild(E('line',{x1:0,x2:W,y1:mid,y2:mid,stroke:p.ink,'stroke-width':.6,opacity:.4}));
+  TX(s,0,mid+30,'GATE CURRENT · FLOOD ABOVE, EBB BELOW · 0–3 KT',{fill:p.mute,'font-size':7});
+  const mx=NOW/24*W;
+  s.appendChild(E('line',{x1:mx,x2:mx,y1:4,y2:base,stroke:p.ink,'stroke-width':1}));
+  s.appendChild(E('circle',{cx:mx,cy:base-(tide(NOW)-LO)/(HI-LO)*amp,r:3.6,fill:p.ink}));
+  TX(s,mx+5,10,'NOW 4.3',{fill:p.ink,'font-size':7});}
+
+/* ---------- FIG 2 · five days × hours, scored for W/E ---------- */
+function mosaic(s,p,i){
+  const W=338,L=38,PW=W-L,cw=PW/24-1.5,rh=25,gap=6;
+  const d=E('defs'),h=E('pattern',{id:'hx'+i,width:4,height:4,patternUnits:'userSpaceOnUse',
+    patternTransform:'rotate(45)'});
+  h.appendChild(E('rect',{width:1.5,height:4,fill:p.spot,opacity:.6}));d.appendChild(h);s.appendChild(d);
+  const labs=['TODAY','WED','THU','FRI','SAT'];
+  for(let dy=0;dy<5;dy++){const y=14+dy*(rh+gap);
+    TX(s,0,y+rh/2+3,labs[dy],{fill:dy?p.mute:p.ink,'font-size':7.2});
+    for(let hr=0;hr<24;hr++){const x=L+hr*(PW/24),night=hr<7||hr>19;
+      const q=1-Math.min(1,Math.abs(curD(hr+.5,dy))/2.0);
+      const lvl=night?0:(q>.62?3:q>.3?2:1);
+      if(lvl===3) s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:p.spot}));
+      else if(lvl===2) s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:`url(#hx${i})`}));
+      else s.appendChild(E('rect',{x,y,width:cw,height:rh,fill:'none',stroke:p.ink,
+        'stroke-width':.7,opacity:night?.11:.3}));}}
+  [[6,'06'],[12,'12'],[18,'18']].forEach(([hr,l])=>
+    TX(s,L+hr*(PW/24)+cw/2,172,l,{fill:p.mute,'text-anchor':'middle','font-size':7.2}));
+  const bx=L+11*(PW/24)-2;
+  s.appendChild(E('rect',{x:bx,y:11,width:(PW/24)*2.6+2,height:rh+6,fill:'none',
+    stroke:p.ink,'stroke-width':1.4}));
+  const nx=L+9*(PW/24);
+  s.appendChild(E('line',{x1:nx,x2:nx,y1:8,y2:164,stroke:p.ink,'stroke-width':1,opacity:.5,
+    'stroke-dasharray':'2 3'}));}
+
+/* ---------- day ribbon ---------- */
+function ribbon(s,p){
+  const W=338,y=7,hh=11;
+  s.appendChild(E('rect',{x:0,y,width:W,height:hh,fill:p.ink,opacity:.07}));
+  for(let hr=7;hr<=20;hr++){const q=1-Math.min(1,Math.abs(curD(hr+.5,0))/2.0);
+    if(q>.3) s.appendChild(E('rect',{x:hr/24*W,y,width:W/24,height:hh,fill:p.spot,opacity:q>.62?1:.3}));}
+  const a=11.17/24*W,b=13.67/24*W;
+  s.appendChild(E('rect',{x:a,y:y-3,width:b-a,height:hh+6,fill:'none',stroke:p.ink,'stroke-width':1.3}));
+  const nx=NOW/24*W;
+  s.appendChild(E('polygon',{points:`${nx-3.5},${y-6} ${nx+3.5},${y-6} ${nx},${y-1}`,fill:p.ink}));
+  [[0,'12A'],[6,'6A'],[12,'12P'],[18,'6P'],[24,'12A']].forEach(([hr,l])=>
+    TX(s,Math.min(Math.max(hr/24*W,8),W-8),y+hh+11,l,{fill:p.mute,'text-anchor':'middle','font-size':6.8}));}
+
+/* ---------- frame builder ---------- */
+const W_RANGE='11:10<span class="d">–</span>13:40', E_RANGE='15:20<span class="d">–</span>17:10';
+function hero(kind,o){
+  if(kind==='window') return `
+    <div class="kk">NEXT BIG SWIM · TODAY</div>
+    <div class="rtname">WEST → FORT MASON · 0.9 MI</div>
+    <div class="win">${W_RANGE}</div>
+    <div class="why${o.hand?' hand':''}">${o.hand
+      ? 'slack 11:42, ebb easing off —<br>cleanest water of the day'
+      : 'Slack 11:42, ebb easing to 0.4 kt. Wind W 12, under the lee of the pier.'}</div>`;
+  if(kind==='count') return `
+    <div class="kk">WEST → FORT MASON OPENS IN</div>
+    <div class="cd">1<i>H</i>46<i>M</i></div>
+    <div class="rtname" style="margin-top:4px">11:10 – 13:40 · SLACK 11:42 · EBB EASING</div>
+    <div class="why">East to the Wharf stays choppy until 15:20.</div>`;
+  return `
+    <div class="kk">NEXT BIG SWIM · TODAY</div>
+    <div class="two">
+      <div><div class="s2">WEST → FORT MASON<br>0.9 MI</div>
+        <div class="w2">${W_RANGE}</div>
+        <div class="s2">SLACK 11:42 · EBB EASING<br>WIND W 12, IN THE LEE</div></div>
+      <div><div class="s2">EAST → WHARF<br>0.6 MI</div>
+        <div class="w2 off">${E_RANGE}</div>
+        <div class="s2">FLOOD UNDER 1 KT<br>CHOP LAYING DOWN</div></div>
+    </div>`;}
+
+const FRAMES=[
+ {cls:'BONE', name:'1 · BONE', sub:'window · oxide on bone, Didot + condensed',
+  kind:'window',
+  note:'<b>WINDOW + 1’s palette.</b> Bone paper, oxide red, Didot numerals against condensed grotesk. The time range is the single biggest thing on the screen because it is the single thing you came for. Closest to a letterpressed tide sheet.'},
+ {cls:'PRESS', name:'2 · PRESS', sub:'both · warm white, your blue, Baskerville', kind:'both', grid:1,
+  note:'<b>BOTH + 4’s skin.</b> West and east set as two columns of a journal spread, east greyed because it is the worse of the two right now. Visible column grid, Baskerville body, your #2038F0 as the only spot. Most informative headline, least punchy.'},
+ {cls:'TEAL', name:'3 · TEAL', sub:'countdown · the 6 palette, condensed display', kind:'count',
+  note:'<b>COUNTDOWN + 6’s palette.</b> The hero is time-until, not time-at — you glance and know whether to start walking. Cream and deep teal, everything in one condensed family so the figures carry the contrast instead of the type.'},
+ {cls:'NIGHT', name:'4 · NIGHT PRESS', sub:'countdown + ribbon · Didot on ink', kind:'count', ribbon:1,
+  note:'<b>Dark without being neon.</b> High-contrast Didot in cream on near-black with one ochre — fashion-editorial, not dashboard. Adds the day ribbon: the whole swimmable day as one bar, your window boxed, now as a caret. Proves the layout survives a dark mode.'},
+ {cls:'RISO', name:'5 · RISO', sub:'window + handwriting · navy & fluoro orange', kind:'window', hand:1,
+  note:'<b>WINDOW, warmest.</b> Navy and fluoro orange overprinting through the halftone, and the “why” line is the one place your handwriting appears — the note you’d actually scrawl. Heaviest condensed display; the loudest of the six.'},
+ {cls:'ALM', name:'6 · ALMANAC', sub:'both + ribbon · olive, Didot, three rule weights', kind:'both', ribbon:1,
+  note:'<b>Most information per inch.</b> Both routes, plus the ribbon, plus both figures, held together by three rule weights and a Baskerville body. Oatmeal and olive reads nautical-publication rather than app. The density test — if this one still feels calm, the layout is right.'}];
+
+const rail=document.getElementById('rail');
+FRAMES.forEach((f,i)=>{
+  const slot=document.createElement('div');slot.className='slot';
+  slot.innerHTML=`<p class="cap">${f.name} <span>· ${f.sub}</span></p>
+  <div class="phone f ${f.cls}">
+    ${f.grid?'<div class="grid"></div>':''}
+    <div class="pad mast"><b>AQUATIC PARK</b><span>TUE 30 SEP · 09:24</span></div>
+    <div class="pad hero">${hero(f.kind,f)}</div>
+    ${f.ribbon?`<svg class="rb" width="338" height="36" style="margin:9px 26px 0"></svg>`:''}
+    <div class="pad now">
+      <div><div class="k">TIDE NOW</div><div class="v">4.3<i> FT</i></div></div>
+      <div><div class="k">&nbsp;</div><div class="v st">rising</div></div>
+      <div><div class="k">WATER</div><div class="v">61.2<i>°</i></div></div>
+      <div><div class="k">AIR / WIND</div><div class="v">58<i>° · 12 W</i></div></div>
+    </div>
+    <div class="pad figcap"><span>FIG. 1 — TIDE &amp; GATE CURRENT, 24 H</span><span>FT MLLW</span></div>
+    <svg class="t1" width="338" height="170" style="margin:7px 26px 0"></svg>
+    <div class="pad figcap"><span>FIG. 2 — WEST / EAST WINDOWS, 5 DAYS</span><span>GOOD ■ FAIR ▨ POOR □</span></div>
+    <svg class="t2" width="338" height="178" style="margin:5px 26px 0"></svg>
+    <div class="pad last">
+      <div class="rt"><span class="nm">Cove</span><span>SHELTERED</span><span class="vd">GO</span></div>
+      <div class="rt"><span class="nm">West → Fort Mason</span><span>WITH EBB</span><span class="vd">GO</span></div>
+      <div class="rt"><span class="nm off">East → Wharf</span><span>CHOP</span><span class="vd no">HOLD</span></div>
+      <div class="foot"><span>TABLE · ROUTE</span><span>24H / 5D</span></div>
+    </div>
+  </div>
+  <p class="note">${f.note}</p>`;
+  rail.appendChild(slot);
+  const cs=getComputedStyle(slot.querySelector('.phone'));
+  const p={ink:cs.getPropertyValue('--ink').trim(),mute:cs.getPropertyValue('--mute').trim(),
+    spot:cs.getPropertyValue('--spot').trim(),paper:cs.getPropertyValue('--paper').trim()};
+  tideFig(slot.querySelector('.t1'),p,i);
+  mosaic(slot.querySelector('.t2'),p,i);
+  const rb=slot.querySelector('.rb'); if(rb) ribbon(rb,p);
+});
+</script></body></html>

@@ -70,9 +70,9 @@ struct TideTable: View {
 
     private func dayHeader(_ day: String) -> some View {
         Text(day)
-            .font(.system(size: 9, design: .monospaced))
+            .font(Theme.micro(9))
             .tracking(0.81)
-            .foregroundStyle(Theme.inkFaint)
+            .foregroundStyle(Theme.mute)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 22)
             .frame(height: Self.headerHeight, alignment: .bottom)
@@ -82,14 +82,14 @@ struct TideTable: View {
     /// Holds the section open before any data arrives (§5.8).
     private var placeholder: some View {
         row(time: "—", type: "", value: "",
-            timeColor: Theme.ink, typeColor: Theme.inkMuted, valueColor: Theme.inkSecond)
+            timeColor: Theme.ink, typeColor: Theme.mute, valueColor: Theme.mute)
     }
 
     private func tideRow(_ extreme: TideExtreme) -> some View {
         row(time: Self.clock.string(from: extreme.time),
             type: extreme.type == .high ? "HIGH" : "LOW",
             value: String(format: "%.2f ft", extreme.height),
-            timeColor: Theme.ink, typeColor: Theme.inkMuted, valueColor: Theme.inkSecond)
+            timeColor: Theme.ink, typeColor: Theme.mute, valueColor: Theme.mute)
             .contentShape(Rectangle())
             .onTapGesture { onSelect(extreme.time) }
     }
@@ -98,8 +98,8 @@ struct TideTable: View {
         let minutes = Int((window.end.timeIntervalSince(window.start) / 60).rounded())
         return row(time: Self.clock.string(from: window.start),
                    type: "SLACK", value: "\(minutes) min",
-                   timeColor: Theme.blue, typeColor: Theme.blue, valueColor: Theme.blue)
-            .background(Theme.slackTint)
+                   timeColor: Theme.spot, typeColor: Theme.spot, valueColor: Theme.spot)
+            .background(Theme.spot.opacity(0.07))
             .contentShape(Rectangle())
             .onTapGesture { onSelect(window.start) }
     }
@@ -108,18 +108,16 @@ struct TideTable: View {
                      timeColor: Color, typeColor: Color, valueColor: Color) -> some View {
         HStack(spacing: 0) {
             Text(time)
-                .font(.system(size: 11.5, design: .monospaced))
-                .monospacedDigit()
+                .font(Theme.display(16))
                 .foregroundStyle(timeColor)
                 .frame(width: 72, alignment: .leading)
             Text(type)
-                .font(.system(size: 9, design: .monospaced))
+                .font(Theme.micro(9))
                 .tracking(0.72)
                 .foregroundStyle(typeColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text(value)
-                .font(.system(size: 11.5, design: .monospaced))
-                .monospacedDigit()
+                .font(Theme.display(16))
                 .foregroundStyle(valueColor)
         }
         .padding(.horizontal, 22)

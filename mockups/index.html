@@ -1,0 +1,276 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Aquatic Park — redesign directions</title>
+<style>
+@font-face { font-family:'Hand'; src:url('me1.ttf') format('truetype'); }
+@font-face { font-family:'Hand2'; src:url('me2.ttf') format('truetype'); }
+:root{ --mono: ui-monospace,'SF Mono',Menlo,monospace; --sans:-apple-system,'Helvetica Neue',Arial,sans-serif; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#17171a;color:#8a8a90;font-family:var(--mono);padding:48px 40px 80px;}
+h1{font-size:12px;letter-spacing:.22em;color:#f0f0ee;font-weight:400;margin-bottom:6px}
+.sub{font-size:11px;line-height:1.7;max-width:760px;margin-bottom:44px}
+.rail{display:flex;gap:44px;align-items:flex-start;flex-wrap:wrap}
+.slot{width:390px}
+.cap{font-size:10px;letter-spacing:.18em;color:#f0f0ee;margin:0 0 4px}
+.cap span{color:#6a6a72;letter-spacing:.06em}
+.note{font-size:10.5px;line-height:1.65;margin:10px 2px 0;color:#7c7c84}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;position:relative;
+  box-shadow:0 0 0 1px #2e2e34, 0 30px 70px rgba(0,0,0,.6)}
+.hair{height:1px;width:100%}
+.lbl{font-size:8.5px;letter-spacing:.14em}
+svg{display:block;overflow:visible}
+/* ---------- A: INSTRUMENT ---------- */
+.A{background:#0a0a0b;color:#f4f4f2;padding:54px 22px 30px;display:flex;flex-direction:column}
+.A .top{display:flex;justify-content:space-between;align-items:baseline;font-size:9.5px;letter-spacing:.2em;color:#6f6f76}
+.A .top b{color:#f4f4f2;font-weight:400}
+.A .hero{position:relative;margin:26px -22px 0;height:300px}
+.A .num{position:absolute;left:18px;top:4px;font-family:var(--sans);font-size:150px;line-height:.78;
+  letter-spacing:-.06em;font-weight:500;mix-blend-mode:difference;color:#fff;z-index:3}
+.A .num i{font-style:normal;font-size:22px;letter-spacing:.1em;vertical-align:super;font-family:var(--mono)}
+.A .state{position:absolute;left:22px;top:176px;font-family:'Hand',cursive;font-size:30px;color:#d7ff3e;z-index:4}
+.A .axis{display:flex;justify-content:space-between;font-size:8.5px;letter-spacing:.12em;color:#5c5c63;margin-top:-4px;padding:0 2px}
+.A .row{display:flex;border-top:1px solid #23232a;padding:13px 0 15px}
+.A .cel{flex:1}
+.A .cel .lbl{color:#6f6f76;display:block;margin-bottom:7px}
+.A .cel .v{font-size:19px;letter-spacing:-.02em}
+.A .cel .v em{font-style:normal;font-size:10px;color:#8e8e96;letter-spacing:.06em}
+.A .gate{border-top:1px solid #23232a;padding:15px 0 6px}
+.A .gatehd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:13px}
+.A .gatehd .lbl{color:#6f6f76}
+.A .gatehd .v{font-size:15px;color:#d7ff3e;letter-spacing:.02em}
+.A .slack{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #23232a;padding:14px 0 16px}
+.A .slack .big{font-size:15px}
+.A .slack .big u{text-decoration:none;color:#d7ff3e}
+.A .routes{border-top:1px solid #23232a;padding-top:14px}
+.A .rt{display:flex;align-items:center;gap:10px;padding:7px 0}
+.A .rt .n{flex:1;font-size:11.5px;letter-spacing:.04em}
+.A .rt .n.off{color:#67676e}
+.A .vd{font-size:8.5px;letter-spacing:.14em;padding:4px 7px}
+.A .vd.go{background:#d7ff3e;color:#0a0a0b}
+.A .vd.no{border:1px solid #3a3a42;color:#7e7e86}
+.A .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:9.5px;letter-spacing:.16em}
+.A .seg{display:flex}
+.A .seg span{padding:4px 8px;border:1px solid #2e2e36;color:#6f6f76}
+.A .seg span.on{background:#f4f4f2;color:#0a0a0b;border-color:#f4f4f2}
+/* ---------- B: FIELD LOG ---------- */
+.B{background:#f1ede2;color:#15233f;padding:54px 0 28px;display:flex;flex-direction:column;position:relative}
+.B .grid{position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(#15233f14 1px,transparent 1px),linear-gradient(90deg,#15233f14 1px,transparent 1px);
+  background-size:13px 13px}
+.B .pad{padding:0 24px;position:relative;z-index:2}
+.B .stamp{display:inline-block;border:1.5px solid #15233f;padding:5px 9px 6px;transform:rotate(-2.4deg);
+  font-size:10px;letter-spacing:.2em}
+.B .date{float:right;font-size:10px;letter-spacing:.12em;color:#5d6b86;padding-top:8px}
+.B .read{display:flex;align-items:flex-end;gap:12px;margin:28px 0 2px}
+.B .read .n{font-family:var(--sans);font-size:84px;line-height:.8;letter-spacing:-.05em;font-weight:600}
+.B .read .u{font-size:11px;letter-spacing:.16em;padding-bottom:9px;color:#5d6b86}
+.B .read .hand{font-family:'Hand',cursive;font-size:26px;color:#ff5a1f;padding-bottom:6px;margin-left:auto;transform:rotate(-3deg)}
+.B .chart{position:relative;margin:14px 0 0;z-index:2}
+.B .scrawl{position:absolute;font-family:'Hand2','Hand',cursive;font-size:17px;color:#ff5a1f;line-height:1.15;z-index:6}
+.B table{width:100%;border-collapse:collapse;font-size:11px;position:relative;z-index:2}
+.B td{border-bottom:1px solid #15233f26;padding:9px 0}
+.B td.k{font-size:9px;letter-spacing:.15em;color:#5d6b86;width:62px}
+.B td.v{font-size:15px;letter-spacing:-.01em;width:74px}
+.B td.n{font-size:9.5px;letter-spacing:.06em;color:#5d6b86;text-align:right}
+.B .rt{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #15233f26;position:relative;z-index:2}
+.B .rt .tick{font-family:'Hand',cursive;font-size:22px;width:20px;color:#ff5a1f}
+.B .rt .nm{flex:1;font-size:12px}
+.B .rt .nm.off{color:#7b87a0}
+.B .rt .sub{font-size:9px;letter-spacing:.1em;color:#7b87a0}
+.B .foot{margin-top:auto;display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.16em;color:#15233f;position:relative;z-index:2}
+/* ---------- C: SONAR ---------- */
+.C{background:#04141a;color:#e8fbf7;padding:54px 22px 30px;display:flex;flex-direction:column}
+.C .top{display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.2em;color:#4e7b80}
+.C .top b{color:#e8fbf7;font-weight:400}
+.C .dialwrap{position:relative;margin:10px -4px 0}
+.C .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.C .mid .t{font-size:10px;letter-spacing:.22em;color:#4e7b80}
+.C .mid .n{font-family:var(--sans);font-size:66px;line-height:.9;letter-spacing:-.045em;font-weight:500;margin:6px 0 2px}
+.C .mid .n i{font-style:normal;font-size:13px;letter-spacing:.1em;font-family:var(--mono);color:#4e7b80;vertical-align:super}
+.C .mid .s{font-family:'Hand',cursive;font-size:25px;color:#35f0d0}
+.C .key{display:flex;justify-content:center;gap:18px;font-size:8.5px;letter-spacing:.13em;color:#4e7b80;margin-top:2px}
+.C .key i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:5px;font-style:normal}
+.C .row{display:flex;border-top:1px solid #0e2f36;padding:14px 0 16px;margin-top:14px}
+.C .cel{flex:1}
+.C .cel .lbl{color:#4e7b80;display:block;margin-bottom:7px}
+.C .cel .v{font-size:19px;letter-spacing:-.02em}
+.C .cel .v em{font-style:normal;font-size:10px;color:#4e7b80;letter-spacing:.06em}
+.C .rt{display:flex;align-items:center;gap:11px;padding:9px 0;border-top:1px solid #0e2f36}
+.C .rt .dot{width:9px;height:9px;border-radius:50%}
+.C .rt .nm{flex:1;font-size:11.5px;letter-spacing:.03em}
+.C .rt .nm.off{color:#5c858a}
+.C .rt .sub{font-size:8.5px;letter-spacing:.13em;color:#4e7b80}
+.C .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:center;font-size:9.5px;letter-spacing:.16em;color:#4e7b80}
+.C .foot b{color:#e8fbf7;font-weight:400}
+</style></head><body>
+<h1>AQUATIC PARK — THREE REDESIGN DIRECTIONS</h1>
+<p class="sub">Same data, same single screen, same scrub-the-marker interaction you already built. What changes is the hierarchy, the palette, and what the hero element is. Nothing here is coded into the app yet.</p>
+<div class="rail">
+
+  <div class="slot">
+    <p class="cap">A — INSTRUMENT <span>· swiss-punk, overprinted numeral</span></p>
+    <div class="phone A">
+      <div class="top"><b>AQUATIC PARK</b><span>9414290 / GG</span></div>
+      <div class="hero">
+        <div class="num">4.3<i>FT</i></div>
+        <div class="state">rising</div>
+        <svg id="aCurve" width="390" height="300"></svg>
+      </div>
+      <div class="axis"><span>00</span><span>06</span><span>09:24</span><span>18</span><span>00</span></div>
+      <div class="row">
+        <div class="cel"><span class="lbl">WATER</span><div class="v">61.2°</div></div>
+        <div class="cel"><span class="lbl">AIR</span><div class="v">58°</div></div>
+        <div class="cel"><span class="lbl">WIND</span><div class="v">12 <em>W</em></div></div>
+        <div class="cel"><span class="lbl">UV</span><div class="v">4</div></div>
+      </div>
+      <div class="gate">
+        <div class="gatehd"><span class="lbl">GOLDEN GATE</span><span class="v">EBB 2.1 KT</span></div>
+        <svg id="aGate" width="346" height="22"></svg>
+      </div>
+      <div class="slack"><span class="lbl">NEXT SLACK</span><span class="big">11:42 &nbsp;<u>+2H 18M</u></span></div>
+      <div class="routes">
+        <div class="rt"><span class="n">Cove</span><span class="vd go">GO</span></div>
+        <div class="rt"><span class="n">West → Fort Mason</span><span class="vd go">GO</span></div>
+        <div class="rt"><span class="n off">East → Wharf</span><span class="vd no">HOLD</span></div>
+      </div>
+      <div class="foot"><div class="seg"><span class="on">24H</span><span>72H</span></div><span>TABLE →</span></div>
+    </div>
+    <p class="note"><b style="color:#d7ff3e">The move:</b> the tide curve is the page, not a widget. The height numeral sits <i>in</i> the curve and inverts where they overlap (blend-mode difference) — one acid accent, pure black, mono micro-labels. Gate current becomes a centre-zero needle bar, so ebb/flood is a direction you see, not a word you read.</p>
+  </div>
+
+  <div class="slot">
+    <p class="cap">B — FIELD LOG <span>· riso duotone + your handwriting</span></p>
+    <div class="phone B">
+      <div class="grid"></div>
+      <div class="pad">
+        <span class="date">TUE 30 SEP · 09:24</span>
+        <span class="stamp">AQUATIC PARK</span>
+        <div class="read"><span class="n">4.3</span><span class="u">FT<br>MLLW</span><span class="hand">rising</span></div>
+      </div>
+      <div class="chart">
+        <svg id="bCurve" width="390" height="236"></svg>
+        <div class="scrawl" style="left:232px;top:18px;width:140px">slack ~11:40 —<br>best window</div>
+        <div class="scrawl" style="left:26px;top:188px;color:#15233f;opacity:.55">low 1.1 @ 06:12</div>
+      </div>
+      <div class="pad" style="margin-top:4px">
+        <table>
+          <tr><td class="k">WATER</td><td class="v">61.2°</td><td class="n">RICHMOND · 08:54</td></tr>
+          <tr><td class="k">AIR / WIND</td><td class="v">58° · 12</td><td class="n">W, GUST 18</td></tr>
+          <tr><td class="k">GATE</td><td class="v">−2.1 KT</td><td class="n">EBB, EASING</td></tr>
+        </table>
+        <div style="height:16px"></div>
+        <div class="rt"><span class="tick">✓</span><span class="nm">Cove<div class="sub">SHELTERED</div></span><span class="sub">WIND 12</span></div>
+        <div class="rt"><span class="tick">✓</span><span class="nm">West → Fort Mason<div class="sub">0.9 MI</div></span><span class="sub">WITH EBB</span></div>
+        <div class="rt"><span class="tick" style="color:#15233f;opacity:.4">✗</span><span class="nm off">East → Wharf<div class="sub">0.6 MI</div></span><span class="sub">CHOP</span></div>
+      </div>
+      <div class="pad foot" style="margin-top:auto"><span>24H / <span style="color:#7b87a0">72H</span></span><span>TIDE TABLE →</span></div>
+    </div>
+    <p class="note"><b style="color:#ff5a1f">The move:</b> warm paper, two inks overprinting where they cross, visible graph-paper substrate. Your own handwriting (<code>me1/me2.ttf</code>) stops being decoration and becomes the annotation layer — the thing a swimmer would actually scribble in the margin. Data is set as a logbook table, not cards.</p>
+  </div>
+
+  <div class="slot">
+    <p class="cap">C — SONAR <span>· one radial dial, whole day at a glance</span></p>
+    <div class="phone C">
+      <div class="top"><b>AQUATIC PARK</b><span>TUE 30 SEP</span></div>
+      <div class="dialwrap">
+        <svg id="cDial" width="346" height="346"></svg>
+        <div class="mid">
+          <div class="t">09:24</div>
+          <div class="n">4.3<i>FT</i></div>
+          <div class="s">rising</div>
+        </div>
+      </div>
+      <div class="key"><span><i style="background:#35f0d0"></i>EBB</span><span><i style="background:#ffb03a"></i>FLOOD</span><span><i style="background:#e8fbf7"></i>SLACK 11:42</span></div>
+      <div class="row">
+        <div class="cel"><span class="lbl">WATER</span><div class="v">61.2°</div></div>
+        <div class="cel"><span class="lbl">AIR</span><div class="v">58°</div></div>
+        <div class="cel"><span class="lbl">WIND</span><div class="v">12 <em>W</em></div></div>
+        <div class="cel"><span class="lbl">UV</span><div class="v">4</div></div>
+      </div>
+      <div class="rt"><span class="dot" style="background:#35f0d0"></span><span class="nm">Cove</span><span class="sub">SHELTERED</span></div>
+      <div class="rt"><span class="dot" style="background:#35f0d0"></span><span class="nm">West → Fort Mason</span><span class="sub">WITH EBB</span></div>
+      <div class="rt"><span class="dot" style="background:#2b4a4f"></span><span class="nm off">East → Wharf</span><span class="sub">CHOP</span></div>
+      <div class="foot"><span>DRAG THE RING</span><span><b>TABLE</b> · ROUTE</span></div>
+    </div>
+    <p class="note"><b style="color:#35f0d0">The move:</b> a tide curve on an x-axis hides that the day is a <i>cycle</i>. Two concentric rings on one 24h clock face: inner band = tide height, outer diverging band = Gate current (cyan ebb / amber flood). Slack is where the current band pinches to nothing — you spot the swim window without reading a single number. Scrub by dragging around the ring.</p>
+  </div>
+
+</div>
+<script>
+const TAU = Math.PI*2;
+const tide = h => 3.0 + 2.4*Math.sin(TAU*(h-9.1)/12.42) + 0.75*Math.sin(TAU*(h-5)/24.84);
+const cur  = h => 2.55*Math.sin(TAU*(h-14.1)/12.42);
+const NOW = 9.4;
+let lo=99,hi=-99; for(let h=0;h<=24;h+=.1){lo=Math.min(lo,tide(h));hi=Math.max(hi,tide(h));}
+
+function el(n,a){const e=document.createElementNS('http://www.w3.org/2000/svg',n);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+// ---- A + B: cartesian curve
+function curve(id,{w,h,top,bot,stroke,fill,grid,marker,dayLine}){
+  const s=document.getElementById(id); s.innerHTML='';
+  const X=hr=>hr/24*w, Y=v=>bot-(v-lo)/(hi-lo)*(bot-top);
+  if(grid) for(let i=1;i<3;i++){const y=top+(bot-top)*i/3;
+    s.appendChild(el('line',{x1:0,x2:w,y1:y,y2:y,stroke:grid,'stroke-width':1}));}
+  if(dayLine) for(let hr=6;hr<24;hr+=6){
+    s.appendChild(el('line',{x1:X(hr),x2:X(hr),y1:top-6,y2:bot,stroke:grid,'stroke-width':1}));}
+  let d=''; for(let hr=0;hr<=24;hr+=.1) d+=(d?'L':'M')+X(hr).toFixed(1)+' '+Y(tide(hr)).toFixed(1)+' ';
+  if(fill) s.appendChild(el('path',{d:d+`L${w} ${bot+40} L0 ${bot+40} Z`,fill:fill,'mix-blend-mode':'multiply'}));
+  s.appendChild(el('path',{d,fill:'none',stroke:stroke,'stroke-width':2.4,'stroke-linecap':'round'}));
+  // slack window band 11:10–12:14
+  s.appendChild(el('rect',{x:X(11.17),y:top-6,width:X(12.23)-X(11.17),height:bot-top+6,
+    fill:stroke,opacity:.14}));
+  if(marker){
+    s.appendChild(el('line',{x1:X(NOW),x2:X(NOW),y1:top-10,y2:bot+6,stroke:marker,'stroke-width':1}));
+    s.appendChild(el('circle',{cx:X(NOW),cy:Y(tide(NOW)),r:4.5,fill:marker}));
+  }
+}
+curve('aCurve',{w:390,h:300,top:120,bot:272,stroke:'#d7ff3e',grid:'#1e1e24',marker:'#f4f4f2',dayLine:true});
+curve('bCurve',{w:390,h:236,top:40,bot:208,stroke:'#15233f',fill:'#ff5a1f',grid:'#15233f22',marker:'#15233f',dayLine:true});
+
+// ---- A: centre-zero gate bar
+(()=>{const s=document.getElementById('aGate'),w=346,cx=w/2,y=12,sc=46; // px per knot
+  s.appendChild(el('line',{x1:0,x2:w,y1:y,y2:y,stroke:'#23232a','stroke-width':1}));
+  [-3,-1.5,1.5,3].forEach(v=>s.appendChild(el('line',
+    {x1:cx+v*sc,x2:cx+v*sc,y1:y-4,y2:y+4,stroke:'#2e2e36','stroke-width':1})));
+  s.appendChild(el('line',{x1:cx,x2:cx,y1:y-9,y2:y+9,stroke:'#6f6f76','stroke-width':1}));
+  s.appendChild(el('rect',{x:cx-2.1*sc,y:y-5,width:2.1*sc,height:10,fill:'#d7ff3e'}));
+  const t1=el('text',{x:0,y:y+20,fill:'#5c5c63','font-size':8,'letter-spacing':1.2});t1.textContent='EBB 3KT';
+  const t2=el('text',{x:w,y:y+20,fill:'#5c5c63','font-size':8,'letter-spacing':1.2,'text-anchor':'end'});t2.textContent='FLOOD 3KT';
+  s.append(t1,t2);})();
+
+// ---- C: concentric dial
+(()=>{const s=document.getElementById('cDial'),S=346,c=S/2;
+  const P=(r,hr)=>[c+r*Math.cos(TAU*hr/24-Math.PI/2), c+r*Math.sin(TAU*hr/24-Math.PI/2)];
+  const rTickOut=168, rTickIn=160, rcMid=132, rTideIn=58, rTideOut=116;
+  // hour ticks
+  for(let hr=0;hr<24;hr++){const major=hr%6===0;
+    const[a,b]=P(major?rTickOut:rTickOut-4,hr),[x,y]=P(rTickIn,hr);
+    s.appendChild(el('line',{x1:a,y1:b,x2:x,y2:y,stroke:major?'#4e7b80':'#163c43','stroke-width':1}));}
+  [[0,'00'],[6,'06'],[12,'12'],[18,'18']].forEach(([hr,lab])=>{
+    const[x,y]=P(rTickOut+13,hr);const t=el('text',{x,y:y+3.5,fill:'#4e7b80','font-size':9,
+      'letter-spacing':1.4,'text-anchor':'middle','font-family':'ui-monospace,monospace'});t.textContent=lab;s.appendChild(t);});
+  // current ring: diverging band about rcMid, per-segment colour
+  const N=192, sc=11;
+  for(let i=0;i<N;i++){const h0=i*24/N,h1=(i+1)*24/N,v0=cur(h0),v1=cur(h1);
+    const ebb=(v0+v1)/2<0;
+    const[ax,ay]=P(rcMid+Math.abs(v0)*sc*(ebb?1:1),h0),[bx,by]=P(rcMid+Math.abs(v1)*sc,h1);
+    const[dx,dy]=P(rcMid-Math.abs(v1)*sc,h1),[ex,ey]=P(rcMid-Math.abs(v0)*sc,h0);
+    s.appendChild(el('path',{d:`M${ax} ${ay}L${bx} ${by}L${dx} ${dy}L${ex} ${ey}Z`,
+      fill:ebb?'#35f0d0':'#ffb03a',opacity:.8,stroke:'none'}));}
+  // slack notch
+  [11.7,17.9,5.6,23.8].forEach((hr,i)=>{const[x1,y1]=P(rcMid-30,hr),[x2,y2]=P(rcMid+30,hr);
+    s.appendChild(el('line',{x1,y1,x2,y2,stroke:'#e8fbf7','stroke-width':i?0.7:1.4,opacity:i?.35:.9}));});
+  // tide band
+  let d='',dd='';
+  for(let hr=0;hr<=24;hr+=.25){const r=rTideIn+(tide(hr)-lo)/(hi-lo)*(rTideOut-rTideIn);
+    const[x,y]=P(r,hr); d+=(d?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';}
+  d+='Z';
+  for(let hr=0;hr<=24;hr+=.25){const[x,y]=P(rTideIn,hr); dd+=(dd?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' ';}
+  s.appendChild(el('path',{d:d+' '+dd+'Z',fill:'#35f0d0',opacity:.13,'fill-rule':'evenodd'}));
+  s.appendChild(el('path',{d,fill:'none',stroke:'#9ef5e4','stroke-width':1.6}));
+  s.appendChild(el('circle',{cx:c,cy:c,r:rTideIn,fill:'none',stroke:'#0e2f36','stroke-width':1}));
+  // marker spoke
+  const[mx,my]=P(rTickOut,NOW),[nx,ny]=P(rTideIn-8,NOW);
+  s.appendChild(el('line',{x1:nx,y1:ny,x2:mx,y2:my,stroke:'#e8fbf7','stroke-width':1}));
+  const rNow=rTideIn+(tide(NOW)-lo)/(hi-lo)*(rTideOut-rTideIn),[px,py]=P(rNow,NOW);
+  s.appendChild(el('circle',{cx:px,cy:py,r:5,fill:'#e8fbf7'}));})();
+</script></body></html>
