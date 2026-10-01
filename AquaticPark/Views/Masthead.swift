@@ -61,7 +61,7 @@ struct FigureCaption: View {
         .padding(.horizontal, Theme.margin)
         .padding(.top, 6)
         .overlay(alignment: .top) {
-            Rectangle().fill(Theme.ink).frame(height: 1)
+            Rectangle().fill(Theme.hair).frame(height: 1)
         }
         .padding(.top, 16)
         .frame(height: Self.height, alignment: .bottom)

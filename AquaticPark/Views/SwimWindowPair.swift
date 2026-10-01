@@ -16,15 +16,15 @@ struct SwimWindowPair: View {
         VStack(spacing: 0) {
             MicroLabel(text: "NEXT SWIM WINDOW", size: 7.8, tracking: 1.72)
             HStack(alignment: .top, spacing: 0) {
-                column("WEST → FORT MASON\n0.9 MI", west,
+                column("WEST → FORT MASON", west,
                        quieter: !leads(west, over: east), divided: false)
-                column("EAST → WHARF\n0.6 MI", east,
+                column("EAST → WHARF", east,
                        quieter: !leads(east, over: west), divided: true)
             }
             .padding(.top, 12)
         }
         .padding(.horizontal, Theme.margin)
-        .padding(.top, 18)
+        .padding(.top, 24)
         .frame(height: Self.height, alignment: .top)
     }
 
@@ -38,24 +38,42 @@ struct SwimWindowPair: View {
 
     private func column(_ title: String, _ window: SwimWindow?,
                         quieter: Bool, divided: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            MicroLabel(text: title + Self.day(of: window), tracking: 0.99)
+        VStack(alignment: .center, spacing: 0) {
+            MicroLabel(text: title + Self.day(of: window), tracking: 0.99,
+                       color: quieter ? Theme.mute : Theme.ink)
+                .multilineTextAlignment(.center)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(window.map(Conditions.span) ?? "—")
-                .font(Theme.display(27))
-                .tracking(-0.54)
-                .foregroundStyle(quieter ? Theme.mute : Theme.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
+            span(window, quieter: quieter)
                 .padding(.vertical, 4)
             caption(window)
+                .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
         .padding(.leading, divided ? 12 : 0)
+        .padding(.trailing, divided ? 0 : 12)
         .overlay(alignment: .leading) {
-            if divided { Rectangle().fill(Theme.hair).frame(width: 1, height: 74) }
+            if divided { Rectangle().fill(Theme.hair).frame(width: 1, height: 38) }
         }
+    }
+
+    /// One size, driven by whichever of the two spans is longer, so west and east always
+    /// read at the same scale — scrubbing swaps which window leads, not the type size.
+    /// A window that crosses noon spells out both meridiems and needs the smaller size;
+    /// when it does, the other column drops to match rather than standing out as bigger.
+    /// `minimumScaleFactor` is the escape hatch for anything longer than either was sized for.
+    private var spanSize: CGFloat {
+        let longest = [west, east].compactMap { $0.map { Conditions.span($0).count } }.max() ?? 0
+        return longest > 13 ? 18 : 22
+    }
+
+    private func span(_ window: SwimWindow?, quieter: Bool) -> some View {
+        Text(window.map(Conditions.span) ?? "—")
+            .font(Theme.display(spanSize))
+            .tracking(spanSize == 22 ? -0.4 : -0.3)
+            .foregroundStyle(quieter ? Theme.mute : Theme.ink)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
     }
 
     /// Blank while the window is still today, which is the common case and wants no

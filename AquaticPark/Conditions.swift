@@ -160,7 +160,7 @@ enum Conditions {
         let home = velocity(at: leg, in: samples) ?? now
 
         let rough = roughOutside(hour, current: now)
-        let tooStrong = now.map { $0 < 0 ? -$0 > ebbCeiling : $0 > floodCeiling } ?? true
+        let tooStrong = tooStrongToSwim(now)
         let pick: Route? = note != nil ? nil
             : (rough || tooStrong) ? .cove
             : ((home ?? 0) >= 0 ? .west : .east)
@@ -281,6 +281,15 @@ enum Conditions {
         return discharge ? "HEAVY RAIN — SEWER OVERFLOW RISK, 48H" : nil
     }
 
+    /// True once a current exceeds what a swimmer can be expected to fight — an ebb judged
+    /// against `ebbCeiling`, a flood against `floodCeiling`, whichever direction this
+    /// reading runs. Shared by the live route read and the window scan so neither can call
+    /// a current swimmable that the other calls too strong.
+    private static func tooStrongToSwim(_ velocity: Double?) -> Bool {
+        guard let velocity else { return true }
+        return velocity < 0 ? -velocity > ebbCeiling : velocity > floodCeiling
+    }
+
     private static func unavailable(_ name: String) -> RouteVerdict {
         RouteVerdict(title: name, sublabel: "—", verdict: "—", condition: "no data",
                      isFavorable: false)
@@ -336,6 +345,11 @@ enum Conditions {
               let hour = weather(at: time, in: forecast) else { return 0 }
         let home = velocity(at: time.addingTimeInterval(swimDuration * 60), in: samples) ?? out
         if roughOutside(hour, current: out) { return 0 }
+        // A current too strong to fight kills the score outright on whichever leg it
+        // falls on — the outbound leg is always fought by design, so this is the guard
+        // against being sent out into a flood or ebb stronger than a swimmer can make
+        // headway against, not just a softer one that happens to be worth less.
+        if tooStrongToSwim(out) || tooStrongToSwim(home) { return 0 }
 
         // Slack both ways is half credit rather than none: it is swimmable in either
         // direction, just without a free ride home.

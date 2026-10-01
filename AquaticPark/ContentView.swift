@@ -25,15 +25,17 @@ struct ContentView: View {
     /// The grid cell last tapped. Nil means the route rows below are reading live `now`.
     @State private var selectedCell: Date?
 
-    /// Derived on refresh rather than in a computed property: the grid is 120 scans of
-    /// the current samples and the body is re-evaluated far more often than the data
-    /// changes.
-    @State private var west: SwimWindow?
-    @State private var east: SwimWindow?
+    /// Derived on refresh rather than in a computed property: it is 96 scans of the
+    /// current samples and the body is re-evaluated far more often than the data changes.
     /// Day offset × hour, each the better of the two exposed routes.
     @State private var grid: [[Double]] = []
 
     private enum ChartRange { case h24, d4 }
+
+    /// Breathing room between sections that would otherwise abut. Subtracted out of
+    /// `figures`' flexible space wherever it falls inside the GeometryReader, so adding
+    /// air between elements never grows the chart or the grid.
+    private let sectionGap: CGFloat = 16
 
     /// §5.8. A refresh failure the cache can still cover within TTL stays `.none` —
     /// the spec asks for no visible difference there.
@@ -41,6 +43,18 @@ struct ContentView: View {
         case none
         case lastData(Date)
         case noData
+    }
+
+    /// Reads off the scrub marker rather than live `now`, so dragging the tide figure
+    /// walks the headline through the window it's pointing at instead of leaving it
+    /// pinned to the moment the data last refreshed.
+    private var west: SwimWindow? {
+        Conditions.nextWindow(route: .west, samples: samples, events: events,
+                              forecast: forecast, after: marker ?? now)
+    }
+    private var east: SwimWindow? {
+        Conditions.nextWindow(route: .east, samples: samples, events: events,
+                              forecast: forecast, after: marker ?? now)
     }
 
     /// The route the headline leads with: whichever window opens first. It is the one
@@ -87,13 +101,7 @@ struct ContentView: View {
             Masthead(now: now)
             notice
             SwimWindowPair(west: west, east: east)
-            DayRibbon(hours: grid.first ?? [], highlight: headline?.window, now: now)
-            NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
-                     rising: Conditions.isRising(at: marker ?? now, in: curve),
-                     water: waterTemp?.temperature,
-                     weather: Conditions.weather(at: marker ?? now, in: forecast),
-                     label: marker.map { "TIDE AT " + Conditions.handClock($0).uppercased() }
-                         ?? "TIDE NOW")
+                .padding(.bottom, sectionGap - 6)
             figures
             selectionNotice
             RouteRows(routes: displayedRoutes)
@@ -123,7 +131,8 @@ struct ContentView: View {
     /// shrinks both rather than clipping one.
     private var figures: some View {
         GeometryReader { geometry in
-            let space = max(geometry.size.height - 2 * FigureCaption.height, 160)
+            let space = max(geometry.size.height - 2 * FigureCaption.height
+                             - NowStrip.viewHeight - 2 * sectionGap, 160)
             VStack(spacing: 0) {
                 FigureCaption(left: "TIDE CHART", right: range == .h24 ? "24 HR" : "4 DAY")
                 TideFigure(curve: curve, samples: samples, window: window,
@@ -132,6 +141,15 @@ struct ContentView: View {
                            onScrub: { marker = $0 })
                     .frame(height: space * 0.46)
                     .padding(.horizontal, Theme.margin)
+                    .padding(.bottom, sectionGap)
+                NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
+                         rising: Conditions.isRising(at: marker ?? now, in: curve),
+                         water: waterTemp?.temperature,
+                         weather: Conditions.weather(at: marker ?? now, in: forecast),
+                         knots: Conditions.velocity(at: marker ?? now, in: samples),
+                         label: marker.map { "TIDE AT " + Conditions.handClock($0).uppercased() }
+                             ?? "TIDE NOW")
+                    .padding(.bottom, sectionGap)
                 FigureCaption(left: "UPCOMING EAST/WEST WINDOWS",
                               right: "GOOD ■ FAIR ▨ POOR □")
                 WindowGrid(days: grid, highlight: headline?.window, now: now,
@@ -291,13 +309,8 @@ struct ContentView: View {
         derive()
     }
 
-    /// Everything the sheet shows that costs more than a lookup: the two headline windows
-    /// and the five-day grid.
+    /// The one thing left that costs more than a lookup: the five-day grid.
     private func derive() {
-        west = Conditions.nextWindow(route: .west, samples: samples, events: events,
-                                     forecast: forecast, after: now)
-        east = Conditions.nextWindow(route: .east, samples: samples, events: events,
-                                     forecast: forecast, after: now)
         guard !samples.isEmpty else {
             grid = []
             return
