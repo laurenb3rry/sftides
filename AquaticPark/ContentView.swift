@@ -114,7 +114,7 @@ struct ContentView: View {
                 showingTable = false
             }
             .background(Theme.paper)
-            .presentationDetents([.height(TideTable.height)])
+            .presentationDetents([.medium, .large])
         }
         .onChange(of: scenePhase) { _, phase in
             // Pull-to-refresh went with the scroll view. Returning to the app is the
@@ -132,14 +132,14 @@ struct ContentView: View {
     private var figures: some View {
         GeometryReader { geometry in
             let space = max(geometry.size.height - 2 * FigureCaption.height
-                             - NowStrip.viewHeight - 2 * sectionGap, 160)
+                             - NowStrip.viewHeight - sectionGap, 160)
             VStack(spacing: 0) {
                 FigureCaption(left: "TIDE CHART", right: range == .h24 ? "24 HR" : "4 DAY")
-                TideFigure(curve: curve, samples: samples, window: window,
+                TideFigure(curve: curve, samples: samples, slacks: slacks, window: window,
                            highlight: headline?.window,
                            highlightLabel: headline?.label ?? "", now: marker ?? now,
                            onScrub: { marker = $0 })
-                    .frame(height: space * 0.46)
+                    .frame(height: space * 0.52)
                     .padding(.horizontal, Theme.margin)
                     .padding(.bottom, sectionGap)
                 NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
@@ -149,12 +149,11 @@ struct ContentView: View {
                          knots: Conditions.velocity(at: marker ?? now, in: samples),
                          label: marker.map { "TIDE AT " + Conditions.handClock($0).uppercased() }
                              ?? "TIDE NOW")
-                    .padding(.bottom, sectionGap)
                 FigureCaption(left: "UPCOMING EAST/WEST WINDOWS",
                               right: "GOOD ■ FAIR ▨ POOR □")
                 WindowGrid(days: grid, highlight: headline?.window, now: now,
                            selected: selectedCell, onSelect: { selectedCell = $0 })
-                    .frame(height: space * 0.54)
+                    .frame(height: space * 0.48)
                     .padding(.horizontal, Theme.margin)
             }
         }

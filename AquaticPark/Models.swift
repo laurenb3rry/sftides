@@ -40,9 +40,12 @@ struct CurrentEvent: Codable, Identifiable {
 }
 
 struct SlackWindow: Identifiable {
+    /// NOAA's labelled slack. The window around it can start well before a high or low
+    /// on a weak-current day, so ordering against tides has to use this, not `start`.
+    let time: Date
     let start: Date
     let end: Date
-    var id: Date { start }
+    var id: Date { time }
 }
 
 /// A 6-minute current prediction. Unlike `CurrentEvent` these are plain samples;

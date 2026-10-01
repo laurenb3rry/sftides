@@ -7,6 +7,8 @@ import SwiftUI
 struct TideFigure: View {
     let curve: [TideSample]
     let samples: [CurrentSample]
+    /// Each one gets an X on the zero line; tapping it lights up the tide dots under it.
+    let slacks: [SlackWindow]
     let window: (start: Date, end: Date)
     /// Shaded and labelled, so the headline time span has a place on the axis.
     let highlight: SwimWindow?
@@ -28,13 +30,33 @@ struct TideFigure: View {
     /// The current strip reads as texture, not as 240 separate readings.
     private let bars = 72
 
+    @State private var selectedSlack: Date?
+
     var body: some View {
         GeometryReader { geometry in
             canvas
-                .gesture(DragGesture(minimumDistance: 0).onChanged { value in
-                    onScrub?(time(at: value.location.x, width: geometry.size.width))
-                })
+                .gesture(DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        // A touch that starts on an X is a tap on it, not a scrub.
+                        guard slack(at: value.startLocation, in: geometry.size) == nil else { return }
+                        onScrub?(time(at: value.location.x, width: geometry.size.width))
+                    }
+                    .onEnded { value in
+                        guard let hit = slack(at: value.startLocation, in: geometry.size),
+                              hypot(value.translation.width, value.translation.height) < 10
+                        else { return }
+                        selectedSlack = selectedSlack == hit.id ? nil : hit.id
+                    })
         }
+    }
+
+    private func slackX(_ slack: SlackWindow, _ width: CGFloat) -> CGFloat {
+        x(slack.time, width)
+    }
+
+    private func slack(at point: CGPoint, in size: CGSize) -> SlackWindow? {
+        guard abs(point.y - size.height * zeroFraction) < 16 else { return nil }
+        return slacks.first { abs(slackX($0, size.width) - point.x) < 14 }
     }
 
     private var canvas: some View {
@@ -53,7 +75,9 @@ struct TideFigure: View {
 
             if let (line, area) = tidePath(width: width, baseline: baseline,
                                            amplitude: amplitude) {
-                halftone(context, clippedTo: area, width: width, height: baseline)
+                let focus = slacks.first { $0.id == selectedSlack }
+                    .map { x($0.start, width)...x($0.end, width) }
+                halftone(context, clippedTo: area, width: width, height: baseline, focus: focus)
                 context.stroke(line, with: .color(Theme.ink), lineWidth: 1.7)
             }
 
@@ -89,6 +113,15 @@ struct TideFigure: View {
             context.stroke(Path { $0.move(to: CGPoint(x: 0, y: zero))
                                   $0.addLine(to: CGPoint(x: width, y: zero)) },
                            with: .color(Theme.ink.opacity(0.4)), lineWidth: 0.6)
+            for slack in slacks {
+                let cx = slackX(slack, width)
+                guard cx >= 0, cx <= width else { continue }
+                context.stroke(Path { $0.move(to: CGPoint(x: cx - 3.5, y: zero - 3.5))
+                                      $0.addLine(to: CGPoint(x: cx + 3.5, y: zero + 3.5))
+                                      $0.move(to: CGPoint(x: cx + 3.5, y: zero - 3.5))
+                                      $0.addLine(to: CGPoint(x: cx - 3.5, y: zero + 3.5)) },
+                               with: .color(.black), lineWidth: 1.4)
+            }
             context.draw(Text("FLOOD ABOVE, EBB BELOW").font(Theme.micro(7)).tracking(1.2)
                 .foregroundStyle(Theme.mute),
                          at: CGPoint(x: width / 2, y: size.height - 1), anchor: .bottom)
@@ -160,12 +193,16 @@ struct TideFigure: View {
     /// A printer's duotone: dots on a 4pt grid, clipped to the water. Cheaper to read
     /// at a glance than a gradient and it survives being 90pt tall.
     private func halftone(_ context: GraphicsContext, clippedTo area: Path,
-                          width: CGFloat, height: CGFloat) {
+                          width: CGFloat, height: CGFloat, focus: ClosedRange<CGFloat>?) {
         context.drawLayer { layer in
             layer.clip(to: area)
-            let dot = Theme.spot.opacity(0.6)
+            // With a slack selected, its columns go full colour and the rest fade back.
+            let normal = Theme.spot.opacity(0.6)
+            let full = Theme.spot
+            let faded = Theme.spot.opacity(0.15)
             for row in stride(from: CGFloat(1.4), to: height, by: 4) {
                 for column in stride(from: CGFloat(1.4), to: width, by: 4) {
+                    let dot = focus.map { $0.contains(column) ? full : faded } ?? normal
                     layer.fill(Path(ellipseIn: CGRect(x: column - 1.05, y: row - 1.05,
                                                       width: 2.1, height: 2.1)),
                                with: .color(dot))

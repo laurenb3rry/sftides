@@ -10,7 +10,7 @@ struct SwimWindowPair: View {
     let west: SwimWindow?
     let east: SwimWindow?
 
-    static let height: CGFloat = 124
+    static let height: CGFloat = 100
 
     var body: some View {
         VStack(spacing: 0) {

@@ -111,6 +111,7 @@ enum Conditions {
                   abs(samples[high + 1].velocity) < slackThreshold { high += 1 }
 
             return SlackWindow(
+                time: slack.time,
                 start: edge(outside: low > 0 ? samples[low - 1] : nil, inside: samples[low]),
                 end: edge(outside: high < samples.count - 1 ? samples[high + 1] : nil,
                           inside: samples[high])

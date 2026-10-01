@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// State B — every low, high, and slack from 6 hours before the marker to 18 hours
-/// after, grouped under a day header. No separators. Tapping a row moves the marker.
+/// State B — every low, high, and slack across the four-day chart window, grouped under
+/// a day header. No separators. Tapping a row moves the marker.
 struct TideTable: View {
     let extremes: [TideExtreme]
     let slacks: [SlackWindow]
@@ -15,7 +15,7 @@ struct TideTable: View {
         var time: Date {
             switch self {
             case .tide(let extreme): extreme.time
-            case .slack(let window): window.start
+            case .slack(let window): window.time
             }
         }
 
@@ -23,35 +23,31 @@ struct TideTable: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if events.isEmpty {
-                placeholder
-            } else {
-                ForEach(days, id: \.self) { day in
-                    dayHeader(day)
-                    ForEach(events.filter { self.day(of: $0.time) == day }) { event in
-                        switch event {
-                        case .tide(let extreme): tideRow(extreme)
-                        case .slack(let window): slackRow(window)
+        ScrollView {
+            VStack(spacing: 0) {
+                if events.isEmpty {
+                    placeholder
+                } else {
+                    ForEach(days, id: \.self) { day in
+                        dayHeader(day)
+                        ForEach(events.filter { self.day(of: $0.time) == day }) { event in
+                            switch event {
+                            case .tide(let extreme): tideRow(extreme)
+                            case .slack(let window): slackRow(window)
+                            }
                         }
                     }
                 }
             }
         }
-        .frame(height: Self.height, alignment: .top)
-        .clipped()
     }
 
-    /// A fixed slot. How many events fall in the window changes as the marker moves,
-    /// and the chart above takes whatever height this section leaves — so the table
-    /// reserves room for the busiest window rather than resizing under the graph.
-    static let height: CGFloat = 10 * rowHeight + 2 * headerHeight + 16
     private static let rowHeight: CGFloat = 32
     private static let headerHeight: CGFloat = 31
 
     private var events: [Event] {
-        let start = marker.addingTimeInterval(-6 * 3600)
-        let end = marker.addingTimeInterval(18 * 3600)
+        // The same four days the chart and the window grid cover.
+        let (start, end) = Conditions.chartWindow(now: marker)
         let tides = extremes.map(Event.tide)
         let windows = slacks.map(Event.slack)
         return (tides + windows)
@@ -96,12 +92,12 @@ struct TideTable: View {
 
     private func slackRow(_ window: SlackWindow) -> some View {
         let minutes = Int((window.end.timeIntervalSince(window.start) / 60).rounded())
-        return row(time: Self.clock.string(from: window.start),
+        return row(time: Self.clock.string(from: window.time),
                    type: "SLACK", value: "\(minutes) min",
                    timeColor: Theme.spot, typeColor: Theme.spot, valueColor: Theme.spot)
             .background(Theme.spot.opacity(0.07))
             .contentShape(Rectangle())
-            .onTapGesture { onSelect(window.start) }
+            .onTapGesture { onSelect(window.time) }
     }
 
     private func row(time: String, type: String, value: String,

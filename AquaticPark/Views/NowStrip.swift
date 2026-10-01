@@ -19,7 +19,7 @@ struct NowStrip: View {
     /// so the strip never reads as live when it isn't.
     var label: String = "TIDE NOW"
 
-    static let viewHeight: CGFloat = 54
+    static let viewHeight: CGFloat = 72
 
     /// Printed numerals are 19pt, so the hand is 19pt scaled by the usual multiplier.
     private let figure: CGFloat = 19
@@ -57,7 +57,10 @@ struct NowStrip: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, Theme.margin)
-        .padding(.top, 11)
+        // The next caption's own 16pt of top padding sits between this band and its rule,
+        // so the band is centred on the full rule-to-rule span, not just the frame.
+        .padding(.top, 16)
+        .frame(height: Self.viewHeight - 16)
         .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
         .padding(.top, 16)
         .frame(height: Self.viewHeight, alignment: .bottom)
