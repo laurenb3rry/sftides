@@ -19,10 +19,11 @@ struct NowStrip: View {
     /// so the strip never reads as live when it isn't.
     var label: String = "TIDE NOW"
 
-    static let viewHeight: CGFloat = 72
+    /// Rule to the next caption's rule is this plus that caption's own 15pt.
+    static let viewHeight: CGFloat = 38
 
-    /// Printed numerals are 19pt, so the hand is 19pt scaled by the usual multiplier.
-    private let figure: CGFloat = 19
+    /// Printed numerals are 16pt, so the hand is 16pt scaled by the usual multiplier.
+    private let figure: CGFloat = 16
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
@@ -35,7 +36,7 @@ struct NowStrip: View {
                     // The one word on the sheet that is both written and in colour, because
                     // it is the only reading that is a direction rather than a quantity.
                     HandwritingText(text: rising.map { $0 ? "rising" : "falling" } ?? "—",
-                                    size: 22, tracking: 0.2)
+                                    size: 18, tracking: 0.2)
                         .foregroundStyle(Theme.spot)
                 }
             }
@@ -57,13 +58,9 @@ struct NowStrip: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, Theme.margin)
-        // The next caption's own 16pt of top padding sits between this band and its rule,
-        // so the band is centred on the full rule-to-rule span, not just the frame.
-        .padding(.top, 16)
-        .frame(height: Self.viewHeight - 16)
+        .padding(.top, 8)
+        .frame(height: Self.viewHeight, alignment: .top)
         .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
-        .padding(.top, 16)
-        .frame(height: Self.viewHeight, alignment: .bottom)
     }
 
     /// Both halves claim an equal share — the left pair's share is fixed at 50% of the
@@ -72,8 +69,12 @@ struct NowStrip: View {
     @ViewBuilder
     private func cell<Value: View>(_ label: String, centered: Bool = false,
                                    @ViewBuilder value: () -> Value) -> some View {
-        VStack(alignment: centered ? .center : .leading, spacing: 5) {
+        VStack(alignment: centered ? .center : .leading, spacing: 3) {
+            // Zero width, so a long "TIDE AT 12:34 PM" runs on past its cell instead of
+            // truncating, without nudging anything beside it.
             MicroLabel(text: label, tracking: 1.22)
+                .fixedSize()
+                .frame(width: 0, alignment: centered ? .center : .leading)
             HStack(alignment: .lastTextBaseline, spacing: 0) { value() }
         }
         .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)

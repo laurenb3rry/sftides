@@ -30,6 +30,10 @@ struct ContentView: View {
     /// Day offset × hour, each the better of the two exposed routes.
     @State private var grid: [[Double]] = []
 
+    /// Every west or east swim window in the fetched range, for the tide figure's dots.
+    /// Derived alongside `grid` for the same reason: each is a scan of the current samples.
+    @State private var swims: [ClosedRange<Date>] = []
+
     private enum ChartRange { case h24, d4 }
 
     /// Breathing room between sections that would otherwise abut. Subtracted out of
@@ -58,13 +62,12 @@ struct ContentView: View {
     }
 
     /// The route the headline leads with: whichever window opens first. It is the one
-    /// shaded on the tide figure and boxed on the ribbon and the grid.
-    private var headline: (window: SwimWindow, label: String)? {
+    /// boxed on the grid.
+    private var headline: SwimWindow? {
         switch (west, east) {
-        case let (west?, east?): west.start <= east.start
-            ? (west, "WEST WINDOW") : (east, "EAST WINDOW")
-        case let (west?, nil): (west, "WEST WINDOW")
-        case let (nil, east?): (east, "EAST WINDOW")
+        case let (west?, east?): west.start <= east.start ? west : east
+        case let (west?, nil): west
+        case let (nil, east?): east
         case (nil, nil): nil
         }
     }
@@ -101,7 +104,6 @@ struct ContentView: View {
             Masthead(now: now)
             notice
             SwimWindowPair(west: west, east: east)
-                .padding(.bottom, sectionGap - 6)
             figures
             selectionNotice
             RouteRows(routes: displayedRoutes)
@@ -133,13 +135,14 @@ struct ContentView: View {
         GeometryReader { geometry in
             let space = max(geometry.size.height - 2 * FigureCaption.height
                              - NowStrip.viewHeight - sectionGap, 160)
+            // The grid keeps the height it had before the strip got shorter and the gap
+            // above the figure closed (34pt + 10pt); all of that goes to the tide figure.
+            let gridHeight = 0.48 * (space - 44)
             VStack(spacing: 0) {
                 FigureCaption(left: "TIDE CHART", right: range == .h24 ? "24 HR" : "4 DAY")
-                TideFigure(curve: curve, samples: samples, slacks: slacks, window: window,
-                           highlight: headline?.window,
-                           highlightLabel: headline?.label ?? "", now: marker ?? now,
-                           onScrub: { marker = $0 })
-                    .frame(height: space * 0.52)
+                TideFigure(curve: curve, samples: samples, slacks: slacks, swims: swims,
+                           fullWindow: window, now: marker ?? now, onScrub: { marker = $0 })
+                    .frame(height: space - gridHeight)
                     .padding(.horizontal, Theme.margin)
                     .padding(.bottom, sectionGap)
                 NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
@@ -151,9 +154,9 @@ struct ContentView: View {
                              ?? "TIDE NOW")
                 FigureCaption(left: "UPCOMING EAST/WEST WINDOWS",
                               right: "GOOD ■ FAIR ▨ POOR □")
-                WindowGrid(days: grid, highlight: headline?.window, now: now,
+                WindowGrid(days: grid, highlight: headline, now: now,
                            selected: selectedCell, onSelect: { selectedCell = $0 })
-                    .frame(height: space * 0.48)
+                    .frame(height: gridHeight)
                     .padding(.horizontal, Theme.margin)
             }
         }
@@ -312,7 +315,14 @@ struct ContentView: View {
     private func derive() {
         guard !samples.isEmpty else {
             grid = []
+            swims = []
             return
+        }
+        let chart = Conditions.chartWindow(now: now)
+        swims = [Conditions.SwimRoute.west, .east].flatMap { route in
+            Conditions.swimWindows(route: route, samples: samples, events: events,
+                                   forecast: forecast, from: chart.start, through: chart.end)
+                .map { $0.start...$0.end }
         }
         let midnight = Conditions.calendar.startOfDay(for: now)
         grid = (0..<4).map { day in
