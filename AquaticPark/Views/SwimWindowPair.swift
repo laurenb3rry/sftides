@@ -16,7 +16,7 @@ struct SwimWindowPair: View {
         VStack(spacing: 0) {
             MicroLabel(text: "NEXT SWIM WINDOW", size: 7.8, tracking: 1.72)
             HStack(alignment: .top, spacing: 0) {
-                column("WEST → FORT MASON", west,
+                column("WEST ← FORT MASON", west,
                        quieter: !leads(west, over: east), divided: false)
                 column("EAST → WHARF", east,
                        quieter: !leads(east, over: west), divided: true)

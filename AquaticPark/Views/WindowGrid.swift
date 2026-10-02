@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Four days by twenty-four hours. Solid blue is a window worth walking down for, hatched
+/// Four days by the eighteen hours that can hold a window. Solid blue is a window worth walking down for, hatched
 /// is passable, an outline is not, and the night hours stay empty so the eye skips them.
 /// Reading across answers "when today"; reading down answers "which day".
 ///
@@ -10,7 +10,6 @@ struct WindowGrid: View {
     /// Outer index is the day offset from today, inner is the hour, values on the same
     /// 0–1 scale `swimScore` returns.
     let days: [[Double]]
-    let highlight: SwimWindow?
     let now: Date
     /// The tapped cell, boxed in spot so the recommendations below have a visible
     /// anchor on the grid.
@@ -21,6 +20,10 @@ struct WindowGrid: View {
     private let gutter: CGFloat = 38
     private let gap: CGFloat = 6
     private let top: CGFloat = 14
+    /// 4 AM through 9 PM. The small hours and the late evening never hold a window, so
+    /// the columns that would show them are given to the hours that can.
+    private let firstHour = 4
+    private let hourCount = 18
 
     var body: some View {
         GeometryReader { geometry in
@@ -44,8 +47,8 @@ struct WindowGrid: View {
                     .foregroundStyle(offset == 0 ? Theme.ink : Theme.mute),
                              at: CGPoint(x: 0, y: y + rows / 2), anchor: .leading)
 
-                for (hour, score) in hours.enumerated() {
-                    let rect = CGRect(x: gutter + CGFloat(hour) * column, y: y,
+                for (hour, score) in hours.enumerated().dropFirst(firstHour).prefix(hourCount) {
+                    let rect = CGRect(x: gutter + CGFloat(hour - firstHour) * column, y: y,
                                       width: cell, height: rows)
                     let night = hour < Conditions.firstLight || hour >= Conditions.lastLight
                     switch (night, score) {
@@ -66,30 +69,16 @@ struct WindowGrid: View {
             let floor = top + CGFloat(days.count) * (rows + gap) - gap
             for (hour, label) in [(6, "6A"), (12, "12P"), (18, "6P")] {
                 context.draw(Text(label).font(Theme.micro(7.2)).foregroundStyle(Theme.mute),
-                             at: CGPoint(x: gutter + CGFloat(hour) * column + cell / 2,
+                             at: CGPoint(x: gutter + CGFloat(hour - firstHour) * column + cell / 2,
                                          y: floor + 5), anchor: .top)
             }
 
-            // Today's row carries the two markers from the ribbon above, so the headline
-            // span and now are findable in the grid as well.
-            if let highlight, Conditions.calendar.isDateInToday(highlight.start) {
-                let from = Self.hours(of: highlight.start)
-                let to = Self.hours(of: highlight.end)
-                let box = CGRect(x: gutter + from * column - 2, y: top - 3,
-                                 width: max((to - from) * column + 2, 4), height: rows + 6)
-                context.stroke(Path(box), with: .color(Theme.ink), lineWidth: 1.4)
-            }
-            let marker = gutter + Self.hours(of: now) * column
-            context.stroke(Path { $0.move(to: CGPoint(x: marker, y: 8))
-                                  $0.addLine(to: CGPoint(x: marker, y: floor)) },
-                           with: .color(Theme.ink.opacity(0.5)),
-                           style: StrokeStyle(lineWidth: 1, dash: [2, 3]))
-
             if let selected {
                 let (day, hour) = Self.cell(of: selected, from: now)
-                if day >= 0, day < days.count {
+                let slot = Int(hour) - firstHour
+                if day >= 0, day < days.count, slot >= 0, slot < hourCount {
                     let y = top + CGFloat(day) * (rows + gap)
-                    let box = CGRect(x: gutter + CGFloat(hour) * column - 2, y: y - 2,
+                    let box = CGRect(x: gutter + CGFloat(slot) * column - 2, y: y - 2,
                                      width: cell + 4, height: rows + 4)
                     context.stroke(Path(box), with: .color(Theme.spot), lineWidth: 2)
                 }
@@ -101,7 +90,7 @@ struct WindowGrid: View {
     /// drift apart on what a cell's rect is.
     private func layout(size: CGSize) -> (column: CGFloat, cell: CGFloat, rows: CGFloat) {
         let plot = size.width - gutter
-        let column = plot / 24
+        let column = plot / CGFloat(hourCount)
         let cell = column - 1.5
         // The hour scale needs 15pt under the last row; the rest is rows and gaps.
         let rows = max((size.height - top - 15 - gap * CGFloat(days.count - 1))
@@ -114,10 +103,10 @@ struct WindowGrid: View {
         let (column, _, rows) = layout(size: size)
         let hourF = (location.x - gutter) / column
         let dayF = (location.y - top) / (rows + gap)
-        guard hourF >= 0, hourF < 24, dayF >= 0, Int(dayF) < days.count else { return }
+        guard hourF >= 0, hourF < CGFloat(hourCount), dayF >= 0, Int(dayF) < days.count else { return }
         let midnight = Conditions.calendar.startOfDay(for: now)
         let time = midnight.addingTimeInterval(
-            Double(Int(dayF) * 24 + Int(hourF)) * 3600 + 1800)
+            Double(Int(dayF) * 24 + firstHour + Int(hourF)) * 3600 + 1800)
         onSelect?(time)
     }
 

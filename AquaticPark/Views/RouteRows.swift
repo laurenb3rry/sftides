@@ -8,16 +8,14 @@ struct RouteRows: View {
 
     static var height: CGFloat { 3 * rowHeight }
 
-    private static let rowHeight: CGFloat = 33
+    private static let rowHeight: CGFloat = 24
 
     var body: some View {
         VStack(spacing: 0) {
             ForEach(routes, id: \.title) { route in
                 HStack(alignment: .lastTextBaseline, spacing: 9) {
-                    Text(route.title)
-                        .font(Theme.serif(15))
-                        .tracking(0.15)
-                        .foregroundStyle(route.isFavorable ? Theme.ink : Theme.mute)
+                    MicroLabel(text: route.title.uppercased(), tracking: 1.29,
+                               color: route.isFavorable ? Theme.ink : Theme.mute)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     HandwritingText(text: route.condition, size: Theme.hand(8.2),
                                     tracking: 0.1)
@@ -32,11 +30,11 @@ struct RouteRows: View {
                         .foregroundStyle(route.isFavorable ? Theme.spot : Theme.mute)
                 }
                 .lineLimit(1)
-                .padding(.vertical, 8)
+                .padding(.vertical, 4)
                 .frame(height: Self.rowHeight)
-                .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
             }
         }
+        .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
         .padding(.horizontal, Theme.margin)
     }
 }

@@ -10,8 +10,9 @@ struct TideFigure: View {
     /// Each one gets an X on the zero line; tapping it shades the slack window and
     /// labels it with its span.
     let slacks: [SlackWindow]
-    /// Every west or east swim window in range. The halftone goes full colour under them.
-    let swims: [ClosedRange<Date>]
+    /// Every west or east swim window in range. Under them the halftone dots give way to
+    /// arrows, pointing the way the route goes.
+    let swims: [(range: ClosedRange<Date>, east: Bool)]
     /// The whole range on offer; pinching narrows what is shown within it.
     let fullWindow: (start: Date, end: Date)
     /// Where the dot and the vertical tick are drawn — real "now" until the figure is
@@ -27,6 +28,8 @@ struct TideFigure: View {
     private let captionHeight: CGFloat = 12
     private let stripHalf: CGFloat = 21
     private let knot: CGFloat = 6
+    /// Under the 26pt page margin, so the widest label stays on screen.
+    private let overflow: CGFloat = 24
 
     /// The current strip reads as texture, not as 240 separate readings.
     private let bars = 72
@@ -59,7 +62,14 @@ struct TideFigure: View {
 
     var body: some View {
         GeometryReader { geometry in
-            canvas
+            // The canvas runs `overflow` wider than the figure each side, so an axis label
+            // centred on an end tick has room; the frame the gestures read stays the figure's.
+            ZStack {
+                canvas
+                    .frame(width: geometry.size.width + 2 * overflow, height: geometry.size.height)
+            }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0)
                     .onChanged { value in
                         // Two fingers are a pinch, not a scrub.
@@ -149,7 +159,8 @@ struct TideFigure: View {
 
     private var canvas: some View {
         Canvas { context, size in
-            let width = size.width
+            let width = size.width - 2 * overflow
+            context.translateBy(x: overflow, y: 0)
             let (baseline, amplitude, zero) = rows(size.height)
 
             for step in 1..<3 {
@@ -161,7 +172,7 @@ struct TideFigure: View {
 
             if let (line, area) = tidePath(width: width, baseline: baseline,
                                            amplitude: amplitude) {
-                let focus = swims.map { x($0.lowerBound, width)...x($0.upperBound, width) }
+                let focus = swims.map { (x($0.range.lowerBound, width)...x($0.range.upperBound, width), $0.east) }
                 halftone(context, clippedTo: area, width: width, height: baseline, focus: focus)
                 context.stroke(line, with: .color(Theme.ink), lineWidth: 1.7)
             }
@@ -191,14 +202,25 @@ struct TideFigure: View {
                                   $0.addLine(to: CGPoint(x: width, y: baseline)) },
                            with: .color(shifting ? Theme.spot : Theme.ink), lineWidth: 1.2)
 
-            for (time, label) in axisTicks() {
+            let ticks = axisTicks()
+            for (index, (time, name)) in ticks.enumerated() {
+                // Over four days the hour alone cannot say which day it is, so the two
+                // ends of the axis carry theirs. Whole-day ticks already are the day.
+                let dayed = fullWindow.end.timeIntervalSince(fullWindow.start) > 36 * 3600
+                    && window.end.timeIntervalSince(window.start) <= 36 * 3600
+                    && (index == 0 || index == ticks.count - 1)
+                let label = dayed ? Self.weekday.string(from: time).uppercased() + " " + name : name
                 let tick = x(time, width)
                 context.stroke(Path { $0.move(to: CGPoint(x: tick, y: baseline))
                                       $0.addLine(to: CGPoint(x: tick, y: baseline + 4)) },
                                with: .color(Theme.ink), lineWidth: 1)
-                context.draw(Text(label).font(Theme.micro(7)).tracking(1.4)
-                    .foregroundStyle(Theme.mute),
-                             at: CGPoint(x: tick + 4, y: baseline + 6), anchor: .topLeading)
+                let text = context.resolve(Text(label).font(Theme.micro(7)).tracking(1.4)
+                    .foregroundStyle(Theme.mute))
+                // Centred under its tick; an end label is pulled back rather than run off
+                // the screen.
+                let half = text.measure(in: size).width / 2
+                let centre = min(max(tick, half - overflow + 2), width + overflow - half - 2)
+                context.draw(text, at: CGPoint(x: centre, y: baseline + 6), anchor: .top)
             }
 
             currentStrip(context, width: width, zero: zero, knot: knot)
@@ -287,24 +309,51 @@ struct TideFigure: View {
         return (line, area)
     }
 
-    /// A printer's duotone: dots on a 4pt grid, clipped to the water. Cheaper to read
-    /// at a glance than a gradient and it survives being 90pt tall. Faint everywhere,
-    /// full colour in the columns under a swim window.
+    /// A printer's duotone: dots on a 6pt grid, clipped to the water. Cheaper to read
+    /// at a glance than a gradient and it survives being 90pt tall. Faint dots everywhere;
+    /// under a swim window each dot becomes a tiny arrow, right for east and left for west.
+    /// Where a west and an east window overlap the two alternate by row.
     private func halftone(_ context: GraphicsContext, clippedTo area: Path,
-                          width: CGFloat, height: CGFloat, focus: [ClosedRange<CGFloat>]) {
+                          width: CGFloat, height: CGFloat,
+                          focus: [(span: ClosedRange<CGFloat>, east: Bool)]) {
         context.drawLayer { layer in
             layer.clip(to: area)
-            let full = Theme.spot
             let faded = Theme.spot.opacity(0.15)
-            for row in stride(from: CGFloat(1.4), to: height, by: 4) {
-                for column in stride(from: CGFloat(1.4), to: width, by: 4) {
-                    let dot = focus.contains { $0.contains(column) } ? full : faded
-                    layer.fill(Path(ellipseIn: CGRect(x: column - 1.05, y: row - 1.05,
-                                                      width: 2.1, height: 2.1)),
-                               with: .color(dot))
+            // Centres on half-points, so a pixel boundary falls mid-glyph at 2x and 3x and the
+            // left and right arrows rasterise as mirror images.
+            for (index, row) in stride(from: CGFloat(3), to: height, by: 6).enumerated() {
+                for column in stride(from: CGFloat(3), to: width, by: 6) {
+                    let under = focus.filter { $0.span.contains(column) }.map(\.east)
+                    let east = under.count == 2 ? index.isMultiple(of: 2) : under.first
+                    guard let east else {
+                        layer.fill(Path(ellipseIn: CGRect(x: column - 1.2, y: row - 1.2,
+                                                          width: 2.4, height: 2.4)),
+                                   with: .color(faded))
+                        continue
+                    }
+                    layer.fill(Self.arrow(at: CGPoint(x: column, y: row), east: east),
+                               with: .color(Theme.spot))
                 }
             }
         }
+    }
+
+    /// 4.2pt wide: a shaft and a solid triangular head, mirrored exactly for west.
+    private static func arrow(at centre: CGPoint, east: Bool) -> Path {
+        let sign: CGFloat = east ? 1 : -1
+        func point(_ dx: CGFloat, _ dy: CGFloat) -> CGPoint {
+            CGPoint(x: centre.x + sign * dx, y: centre.y + dy)
+        }
+        var path = Path()
+        path.move(to: point(-2.1, -0.4))
+        path.addLine(to: point(0.3, -0.4))
+        path.addLine(to: point(0.3, -1.5))
+        path.addLine(to: point(2.1, 0))
+        path.addLine(to: point(0.3, 1.5))
+        path.addLine(to: point(0.3, 0.4))
+        path.addLine(to: point(-2.1, 0.4))
+        path.closeSubpath()
+        return path
     }
 
     /// Flood up in ink, ebb down in blue. Signed, so the reversal reads as a crossing.
@@ -348,9 +397,7 @@ struct TideFigure: View {
 
     private static func hourName(_ hour: Int) -> String {
         switch hour {
-        case 0: "MIDNIGHT"
-        case 12: "NOON"
-        default: "\(hour % 12) \(hour < 12 ? "AM" : "PM")"
+        default: "\(hour % 12 == 0 ? 12 : hour % 12)\(hour < 12 ? "AM" : "PM")"
         }
     }
 

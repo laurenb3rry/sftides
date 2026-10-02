@@ -49,6 +49,8 @@ struct Masthead: View {
 struct FigureCaption: View {
     let left: String
     let right: String
+    /// Stands in for `right` when the corner needs to be tappable.
+    var trailing: AnyView?
 
     static let height: CGFloat = 31
 
@@ -56,7 +58,7 @@ struct FigureCaption: View {
         HStack {
             MicroLabel(text: left, tracking: 1.29)
             Spacer()
-            MicroLabel(text: right, tracking: 1.29)
+            if let trailing { trailing } else { MicroLabel(text: right, tracking: 1.29) }
         }
         .padding(.horizontal, Theme.margin)
         .padding(.top, 6)

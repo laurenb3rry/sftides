@@ -32,7 +32,7 @@ struct ContentView: View {
 
     /// Every west or east swim window in the fetched range, for the tide figure's dots.
     /// Derived alongside `grid` for the same reason: each is a scan of the current samples.
-    @State private var swims: [ClosedRange<Date>] = []
+    @State private var swims: [(range: ClosedRange<Date>, east: Bool)] = []
 
     private enum ChartRange { case h24, d4 }
 
@@ -61,17 +61,6 @@ struct ContentView: View {
                               forecast: forecast, after: marker ?? now)
     }
 
-    /// The route the headline leads with: whichever window opens first. It is the one
-    /// boxed on the grid.
-    private var headline: SwimWindow? {
-        switch (west, east) {
-        case let (west?, east?): west.start <= east.start ? west : east
-        case let (west?, nil): west
-        case let (nil, east?): east
-        case (nil, nil): nil
-        }
-    }
-
     private var slacks: [SlackWindow] {
         Conditions.slackWindows(events: events, samples: samples)
     }
@@ -94,6 +83,11 @@ struct ContentView: View {
     /// which is what makes the tide figure comparable to the grid under it.
     private var window: (start: Date, end: Date) {
         let full = Conditions.chartWindow(now: now)
+        // A tapped grid cell trades the range for that cell's own day.
+        if let selectedCell {
+            let start = Conditions.calendar.startOfDay(for: selectedCell)
+            return (start, min(start.addingTimeInterval(24 * 3600), full.end))
+        }
         guard range == .h24 else { return full }
         let start = Conditions.calendar.startOfDay(for: now)
         return (start, min(start.addingTimeInterval(24 * 3600), full.end))
@@ -137,9 +131,10 @@ struct ContentView: View {
                              - NowStrip.viewHeight - sectionGap, 160)
             // The grid keeps the height it had before the strip got shorter and the gap
             // above the figure closed (34pt + 10pt); all of that goes to the tide figure.
-            let gridHeight = 0.48 * (space - 44)
+            let gridHeight = 0.42 * (space - 44)
             VStack(spacing: 0) {
-                FigureCaption(left: "TIDE CHART", right: range == .h24 ? "24 HR" : "4 DAY")
+                FigureCaption(left: "TIDE CHART", right: "",
+                              trailing: AnyView(selectedCell.map(dayLabel) ?? AnyView(rangeToggle)))
                 TideFigure(curve: curve, samples: samples, slacks: slacks, swims: swims,
                            fullWindow: window, now: marker ?? now, onScrub: { marker = $0 })
                     .frame(height: space - gridHeight)
@@ -154,8 +149,9 @@ struct ContentView: View {
                              ?? "TIDE NOW")
                 FigureCaption(left: "UPCOMING EAST/WEST WINDOWS",
                               right: "GOOD ■ FAIR ▨ POOR □")
-                WindowGrid(days: grid, highlight: headline, now: now,
-                           selected: selectedCell, onSelect: { selectedCell = $0 })
+                WindowGrid(days: grid, now: now,
+                           selected: selectedCell,
+                           onSelect: { selectedCell = $0; marker = $0 })
                     .frame(height: gridHeight)
                     .padding(.horizontal, Theme.margin)
             }
@@ -172,7 +168,10 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .frame(height: 20)
                 .contentShape(Rectangle())
-                .onTapGesture { selectedCell = nil }
+                .onTapGesture {
+                    selectedCell = nil
+                    marker = nil
+                }
         } else {
             Color.clear.frame(height: 20)
         }
@@ -186,11 +185,6 @@ struct ContentView: View {
                 MicroLabel(text: "TABLE", size: 8.4, tracking: 1.43)
             }
             Spacer()
-            HStack(spacing: 6) {
-                rangeButton("24H", .h24)
-                MicroLabel(text: "·", size: 8.4, color: Theme.hair)
-                rangeButton("4D", .d4)
-            }
         }
         .padding(.horizontal, Theme.margin)
         .padding(.top, 8)
@@ -198,10 +192,36 @@ struct ContentView: View {
         .padding(.top, 14)
     }
 
+    /// Stands where the toggle does while a grid cell has the chart on its day.
+    private func dayLabel(_ cell: Date) -> AnyView {
+        let today = Conditions.calendar.isDateInToday(cell)
+        return AnyView(MicroLabel(text: today ? "TODAY" : Self.weekday.string(from: cell).uppercased(),
+                                  tracking: 1.29, color: Theme.ink))
+    }
+
+    private static let weekday: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = API.zone
+        formatter.dateFormat = "EEE"
+        return formatter
+    }()
+
+    /// Lives in the tide chart's caption, since it is the chart's range it sets.
+    private var rangeToggle: some View {
+        HStack(spacing: 6) {
+            rangeButton("TODAY", .h24)
+            MicroLabel(text: "·", tracking: 1.29, color: Theme.hair)
+            rangeButton("4 DAY", .d4)
+        }
+    }
+
     private func rangeButton(_ label: String, _ value: ChartRange) -> some View {
         Button { range = value } label: {
-            MicroLabel(text: label, size: 8.4, tracking: 1.43,
+            MicroLabel(text: label, tracking: 1.29,
                        color: range == value ? Theme.ink : Theme.mute)
+                // Grows the hit area without growing the caption.
+                .contentShape(Rectangle().inset(by: -10))
         }
     }
 
@@ -322,7 +342,7 @@ struct ContentView: View {
         swims = [Conditions.SwimRoute.west, .east].flatMap { route in
             Conditions.swimWindows(route: route, samples: samples, events: events,
                                    forecast: forecast, from: chart.start, through: chart.end)
-                .map { $0.start...$0.end }
+                .map { ($0.start...$0.end, route == .east) }
         }
         let midnight = Conditions.calendar.startOfDay(for: now)
         grid = (0..<4).map { day in

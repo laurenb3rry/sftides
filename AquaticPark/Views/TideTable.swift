@@ -93,7 +93,8 @@ struct TideTable: View {
     private func slackRow(_ window: SlackWindow) -> some View {
         let minutes = Int((window.end.timeIntervalSince(window.start) / 60).rounded())
         return row(time: Self.clock.string(from: window.time),
-                   type: "SLACK", value: "\(minutes) min",
+                   type: "SLACK (\(Self.span.string(from: window.start))-\(Self.span.string(from: window.end)))",
+                   value: "\(minutes) min",
                    timeColor: Theme.spot, typeColor: Theme.spot, valueColor: Theme.spot)
             .background(Theme.spot.opacity(0.07))
             .contentShape(Rectangle())
@@ -104,17 +105,18 @@ struct TideTable: View {
                      timeColor: Color, typeColor: Color, valueColor: Color) -> some View {
         HStack(spacing: 0) {
             Text(time)
-                .font(Theme.display(16))
+                .font(Theme.display(13))
                 .foregroundStyle(timeColor)
-                .frame(width: 72, alignment: .leading)
+                .frame(width: 72, alignment: .center)
             Text(type)
                 .font(Theme.micro(9))
                 .tracking(0.72)
                 .foregroundStyle(typeColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Text(value)
-                .font(Theme.display(16))
+                .font(Theme.display(13))
                 .foregroundStyle(valueColor)
+                .frame(width: 72, alignment: .center)
         }
         .padding(.horizontal, 22)
         .frame(height: Self.rowHeight)
@@ -125,6 +127,15 @@ struct TideTable: View {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = API.zone
         formatter.dateFormat = "h:mm a"
+        return formatter
+    }()
+
+    /// `11:05AM`, for the slack row's window.
+    private static let span: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = API.zone
+        formatter.dateFormat = "h:mma"
         return formatter
     }()
 
