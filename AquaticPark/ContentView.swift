@@ -133,7 +133,7 @@ struct ContentView: View {
             // above the figure closed (34pt + 10pt); all of that goes to the tide figure.
             let gridHeight = 0.42 * (space - 44)
             VStack(spacing: 0) {
-                FigureCaption(left: "TIDE CHART", right: "",
+                FigureCaption(left: "TIDE GRAPH", right: "",
                               trailing: AnyView(selectedCell.map(dayLabel) ?? AnyView(rangeToggle)))
                 TideFigure(curve: curve, samples: samples, slacks: slacks, swims: swims,
                            fullWindow: window, now: marker ?? now, onScrub: { marker = $0 })
