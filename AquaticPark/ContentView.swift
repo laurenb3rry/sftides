@@ -19,7 +19,8 @@ struct ContentView: View {
     @State private var now = Date()
     @State private var banner = Banner.none
     @State private var showingTable = false
-    @State private var range = ChartRange.h24
+    /// Which of the fetched days the tide figure is on, as an offset from today.
+    @State private var day = 0
     /// Where the tide figure was last scrubbed to. Nil tracks live `now`.
     @State private var marker: Date?
     /// The grid cell last tapped. Nil means the route rows below are reading live `now`.
@@ -33,8 +34,6 @@ struct ContentView: View {
     /// Every west or east swim window in the fetched range, for the tide figure's dots.
     /// Derived alongside `grid` for the same reason: each is a scan of the current samples.
     @State private var swims: [(range: ClosedRange<Date>, east: Bool)] = []
-
-    private enum ChartRange { case h24, d4 }
 
     /// Breathing room between sections that would otherwise abut. Subtracted out of
     /// `figures`' flexible space wherever it falls inside the GeometryReader, so adding
@@ -79,20 +78,6 @@ struct ContentView: View {
                                     forecast: forecast).routes
     }
 
-    /// 24H centres the day the swimmer is standing in; 5D is the whole fetched range,
-    /// which is what makes the tide figure comparable to the grid under it.
-    private var window: (start: Date, end: Date) {
-        let full = Conditions.chartWindow(now: now)
-        // A tapped grid cell trades the range for that cell's own day.
-        if let selectedCell {
-            let start = Conditions.calendar.startOfDay(for: selectedCell)
-            return (start, min(start.addingTimeInterval(24 * 3600), full.end))
-        }
-        guard range == .h24 else { return full }
-        let start = Conditions.calendar.startOfDay(for: now)
-        return (start, min(start.addingTimeInterval(24 * 3600), full.end))
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             Masthead(now: now)
@@ -134,9 +119,9 @@ struct ContentView: View {
             let gridHeight = 0.42 * (space - 44)
             VStack(spacing: 0) {
                 FigureCaption(left: "TIDE GRAPH", right: "",
-                              trailing: AnyView(selectedCell.map(dayLabel) ?? AnyView(rangeToggle)))
+                              trailing: AnyView(dayStepper))
                 TideFigure(curve: curve, samples: samples, slacks: slacks, swims: swims,
-                           fullWindow: window, now: marker ?? now, onScrub: { marker = $0 })
+                           fullWindow: Conditions.chartWindow(now: now), day: $day, now: marker ?? now, onScrub: { marker = $0 })
                     .frame(height: space - gridHeight)
                     .padding(.horizontal, Theme.margin)
                     .padding(.bottom, sectionGap)
@@ -151,7 +136,8 @@ struct ContentView: View {
                               right: "GOOD ■ FAIR ▨ POOR □")
                 WindowGrid(days: grid, now: now,
                            selected: selectedCell,
-                           onSelect: { selectedCell = $0; marker = $0 })
+                           onSelect: { selectedCell = $0; marker = $0; day = dayOffset(of: $0) },
+                           onSelectDay: { select(day: $0) })
                     .frame(height: gridHeight)
                     .padding(.horizontal, Theme.margin)
             }
@@ -192,13 +178,6 @@ struct ContentView: View {
         .padding(.top, 14)
     }
 
-    /// Stands where the toggle does while a grid cell has the chart on its day.
-    private func dayLabel(_ cell: Date) -> AnyView {
-        let today = Conditions.calendar.isDateInToday(cell)
-        return AnyView(MicroLabel(text: today ? "TODAY" : Self.weekday.string(from: cell).uppercased(),
-                                  tracking: 1.29, color: Theme.ink))
-    }
-
     private static let weekday: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -207,22 +186,48 @@ struct ContentView: View {
         return formatter
     }()
 
-    /// Lives in the tide chart's caption, since it is the chart's range it sets.
-    private var rangeToggle: some View {
-        HStack(spacing: 6) {
-            rangeButton("TODAY", .h24)
-            MicroLabel(text: "·", tracking: 1.29, color: Theme.hair)
-            rangeButton("4 DAY", .d4)
+    /// `< FRI >` in the tide chart's caption. The label has a fixed width so the arrows
+    /// stay put whatever the day is called; an arrow greys out at either end of the range.
+    private var dayStepper: some View {
+        HStack(spacing: 0) {
+            stepButton("chevron.left", to: day - 1)
+            MicroLabel(text: day == 0 ? "TODAY" : Self.weekday.string(from: date(offset: day)).uppercased(),
+                       tracking: 1.29, color: Theme.ink)
+                .frame(width: 44)
+            stepButton("chevron.right", to: day + 1)
         }
     }
 
-    private func rangeButton(_ label: String, _ value: ChartRange) -> some View {
-        Button { range = value } label: {
-            MicroLabel(text: label, tracking: 1.29,
-                       color: range == value ? Theme.ink : Theme.mute)
+    private func stepButton(_ symbol: String, to target: Int) -> some View {
+        let enabled = grid.indices.contains(target)
+        return Button { select(day: target) } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(enabled ? Theme.ink : Theme.hair)
                 // Grows the hit area without growing the caption.
+                .frame(width: 18)
                 .contentShape(Rectangle().inset(by: -10))
         }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+    }
+
+    /// Moves the figure to a day and drops any grid selection, which belongs to the day
+    /// it was made on.
+    private func select(day target: Int) {
+        day = target
+        selectedCell = nil
+        marker = nil
+    }
+
+    private func date(offset: Int) -> Date {
+        Conditions.calendar.date(byAdding: .day, value: offset, to: now) ?? now
+    }
+
+    private func dayOffset(of time: Date) -> Int {
+        Conditions.calendar.dateComponents(
+            [.day], from: Conditions.calendar.startOfDay(for: now),
+            to: Conditions.calendar.startOfDay(for: time)).day ?? 0
     }
 
     // MARK: - Notice row

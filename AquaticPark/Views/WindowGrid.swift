@@ -16,6 +16,8 @@ struct WindowGrid: View {
     var selected: Date?
     /// Fires with the hour the tap landed in.
     var onSelect: ((Date) -> Void)?
+    /// Fires with the day offset when the tap lands in the label gutter.
+    var onSelectDay: ((Int) -> Void)?
 
     private let gutter: CGFloat = 38
     private let gap: CGFloat = 6
@@ -103,7 +105,12 @@ struct WindowGrid: View {
         let (column, _, rows) = layout(size: size)
         let hourF = (location.x - gutter) / column
         let dayF = (location.y - top) / (rows + gap)
-        guard hourF >= 0, hourF < CGFloat(hourCount), dayF >= 0, Int(dayF) < days.count else { return }
+        guard dayF >= 0, Int(dayF) < days.count else { return }
+        guard hourF >= 0, hourF < CGFloat(hourCount) else {
+            // The label, or the gap either side of the hours: the row, not a cell.
+            onSelectDay?(Int(dayF))
+            return
+        }
         let midnight = Conditions.calendar.startOfDay(for: now)
         let time = midnight.addingTimeInterval(
             Double(Int(dayF) * 24 + firstHour + Int(hourF)) * 3600 + 1800)

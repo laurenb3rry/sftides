@@ -12,8 +12,12 @@ struct TideFigure: View {
     /// Every west or east swim window in range. Under them the halftone dots give way to
     /// arrows, pointing the way the route goes.
     let swims: [(range: ClosedRange<Date>, east: Bool)]
-    /// The whole range on offer; pinching narrows what is shown within it.
+    /// The whole range on offer. A day of it is shown at a time; pinching narrows that
+    /// and dragging the axis moves it, across midnight into the next day.
     let fullWindow: (start: Date, end: Date)
+    /// The day on show, as an offset from the start of `fullWindow`. Follows the axis
+    /// as it is dragged; setting it from outside snaps the view to that whole day.
+    @Binding var day: Int
     /// Where the dot and the vertical tick are drawn — real "now" until the figure is
     /// scrubbed, then wherever the finger last was.
     let now: Date
@@ -34,7 +38,8 @@ struct TideFigure: View {
     @State private var showSlack = false
     @State private var showCurrents = false
     @State private var zoomSpan: TimeInterval?
-    @State private var zoomStart = Date()
+    /// Nil sits on the start of `day`.
+    @State private var zoomStart: Date?
     /// The shown window when the current pinch began, so the whole pinch is measured
     /// against it rather than compounding frame to frame.
     @State private var pinch: (start: Date, span: TimeInterval)?
@@ -45,15 +50,30 @@ struct TideFigure: View {
     @State private var shifting = false
     @State private var panBase: Date?
 
-    /// What is on screen: the full range, or the pinched-in slice of it. Everything
-    /// below reads this, so scrubbing and drawing stay in step with the zoom.
-    private var window: (start: Date, end: Date) {
-        guard let zoomSpan, zoomSpan < fullWindow.end.timeIntervalSince(fullWindow.start)
-        else { return fullWindow }
-        let start = min(max(zoomStart, fullWindow.start),
-                        fullWindow.end.addingTimeInterval(-zoomSpan))
-        return (start, start.addingTimeInterval(zoomSpan))
+    private let daySpan: TimeInterval = 24 * 3600
+
+    private func startOfDay(_ offset: Int) -> Date {
+        Conditions.calendar.date(byAdding: .day, value: offset, to: fullWindow.start)!
     }
+
+    /// What is on screen: a day, or the pinched-in slice of one. Everything below reads
+    /// this, so scrubbing and drawing stay in step with the zoom.
+    private var window: (start: Date, end: Date) {
+        let span = zoomSpan ?? daySpan
+        let start = min(max(zoomStart ?? startOfDay(day), fullWindow.start),
+                        fullWindow.end.addingTimeInterval(-span))
+        return (start, start.addingTimeInterval(span))
+    }
+
+    /// The day under the middle of the screen, so the toggle names what is mostly shown.
+    private var middleDay: Int {
+        let middle = window.start.addingTimeInterval(window.end.timeIntervalSince(window.start) / 2)
+        let offset = Conditions.calendar.dateComponents(
+            [.day], from: fullWindow.start, to: Conditions.calendar.startOfDay(for: middle)).day ?? 0
+        return min(max(offset, 0), 3)
+    }
+
+    private func syncDay() { day = middleDay }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -130,9 +150,11 @@ struct TideFigure: View {
                         pinching = false
                     })
         }
-        // 24H and 4D are different axes; a zoom from one means nothing on the other.
-        .onChange(of: fullWindow.end) {
+        // A day picked from outside shows whole; one the drag just landed on is left as is.
+        .onChange(of: day) {
+            guard day != middleDay else { return }
             zoomSpan = nil
+            zoomStart = nil
             shifting = false
         }
     }
@@ -143,11 +165,11 @@ struct TideFigure: View {
         pinching = true
         if pinch == nil { pinch = (window.start, window.end.timeIntervalSince(window.start)) }
         guard let base = pinch else { return }
-        let full = fullWindow.end.timeIntervalSince(fullWindow.start)
-        let span = min(max(base.span / value.magnification, minZoomSpan), full)
+        let span = min(max(base.span / value.magnification, minZoomSpan), daySpan)
         let anchor = base.start.addingTimeInterval(base.span * value.startAnchor.x)
         zoomSpan = span
         zoomStart = anchor.addingTimeInterval(-span * value.startAnchor.x)
+        syncDay()
     }
 
     /// The time axis: the rule and the labels hanging under it.
@@ -159,12 +181,14 @@ struct TideFigure: View {
     /// Drags the zoomed window, finger-with-the-chart: dragging right shows earlier times.
     /// Measured from where the drag began, and clamped to the range on offer.
     private func pan(by translation: CGFloat, width: CGFloat) {
-        guard let zoomSpan, width > 0 else { return }
+        guard width > 0 else { return }
+        let span = zoomSpan ?? daySpan
         if panBase == nil { panBase = window.start }
         guard let base = panBase else { return }
-        let latest = fullWindow.end.addingTimeInterval(-zoomSpan)
-        let start = base.addingTimeInterval(-zoomSpan * Double(translation / width))
+        let latest = fullWindow.end.addingTimeInterval(-span)
+        let start = base.addingTimeInterval(-span * Double(translation / width))
         zoomStart = min(max(start, fullWindow.start), latest)
+        syncDay()
     }
 
     /// The baseline leaves room under it for the axis labels; the curve fills the rest.
@@ -235,12 +259,11 @@ struct TideFigure: View {
                            with: .color(shifting ? Theme.spot : Theme.ink), lineWidth: 1.2)
 
             let ticks = axisTicks()
-            for (index, (time, name)) in ticks.enumerated() {
-                // Over four days the hour alone cannot say which day it is, so the two
-                // ends of the axis carry theirs. Whole-day ticks already are the day.
-                let dayed = fullWindow.end.timeIntervalSince(fullWindow.start) > 36 * 3600
-                    && window.end.timeIntervalSince(window.start) <= 36 * 3600
-                    && (index == 0 || index == ticks.count - 1)
+            for (time, name) in ticks {
+                // Dragged off a whole day, a midnight on the axis says which day it begins.
+                let wholeDay = window.start == Conditions.calendar.startOfDay(for: window.start)
+                    && window.end.timeIntervalSince(window.start) >= daySpan
+                let dayed = !wholeDay && time == Conditions.calendar.startOfDay(for: time)
                 let label = dayed ? Self.weekday.string(from: time).uppercased() + " " + name : name
                 let tick = x(time, width)
                 context.stroke(Path { $0.move(to: CGPoint(x: tick, y: baseline))
