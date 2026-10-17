@@ -19,8 +19,8 @@ struct NowStrip: View {
     /// so the strip never reads as live when it isn't.
     var label: String = "TIDE NOW"
 
-    /// Rule to the next caption's rule is this plus that caption's own 15pt.
-    static let viewHeight: CGFloat = 38
+    /// Measured from the rule to the bottom of the readings, which overhang it by 2pt.
+    static let viewHeight: CGFloat = Theme.ruleGap + 29.3
 
     /// Printed numerals are 16pt, so the hand is 16pt scaled by the usual multiplier.
     private let figure: CGFloat = 16
@@ -58,7 +58,8 @@ struct NowStrip: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.horizontal, Theme.margin)
-        .padding(.top, 8)
+        // The label's caps sit 0.7pt into its line, so this lands them `ruleGap` under the rule.
+        .padding(.top, Theme.ruleGap - 0.7)
         .frame(height: Self.viewHeight, alignment: .top)
         .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
     }

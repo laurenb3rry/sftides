@@ -6,9 +6,12 @@ import SwiftUI
 struct RouteRows: View {
     let routes: [RouteVerdict]
 
-    static var height: CGFloat { 3 * rowHeight }
+    static var height: CGFloat { 3 * rowHeight + topGap }
 
     private static let rowHeight: CGFloat = 24
+    /// A row already sets its caps 6pt under its top, so this makes the rule-to-COVE
+    /// gap `ruleGap`, like every other section break.
+    private static let topGap: CGFloat = Theme.ruleGap - 6
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,6 +37,7 @@ struct RouteRows: View {
                 .frame(height: Self.rowHeight)
             }
         }
+        .padding(.top, Self.topGap)
         .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
         .padding(.horizontal, Theme.margin)
     }

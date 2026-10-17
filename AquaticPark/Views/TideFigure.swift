@@ -1,13 +1,12 @@
 import SwiftUI
 
-/// The tide curve is the shape of the day; two toggles under the axis lay what the Gate
-/// is doing inside that shape on top of it — slack windows, and flood and ebb as areas
-/// under the curve. Drawn as a figure rather than a chart: no boxed plot area, no legend,
+/// The tide curve is the shape of the day, with the Gate's slack windows standing behind
+/// it as grey bars. Drawn as a figure rather than a chart: no boxed plot area, no legend,
 /// a halftone fill instead of a gradient.
 struct TideFigure: View {
     let curve: [TideSample]
     let samples: [CurrentSample]
-    /// Shaded and labelled with their span when the slack toggle is on.
+    /// Shaded as plain bars; the table carries their times.
     let slacks: [SlackWindow]
     /// Every west or east swim window in range. Under them the halftone dots give way to
     /// arrows, pointing the way the route goes.
@@ -26,17 +25,18 @@ struct TideFigure: View {
     var onScrub: ((Date) -> Void)?
 
     /// Vertical layout, measured up from the bottom of the plot: room for the axis labels,
-    /// and the curve takes everything above. The toggle row sits under the plot.
+    /// and the curve takes everything above.
     private let axisHeight: CGFloat = 18
-    private let toggleHeight: CGFloat = 22
+    /// Where the slack bars and the marker start. The curve's peak sits `peak` down,
+    /// so there is a little headroom over it inside the bars.
+    private let top: CGFloat = 14
+    private let peak: CGFloat = 28
     /// Under the 26pt page margin, so the widest label stays on screen.
     private let overflow: CGFloat = 24
 
     /// Four hours is as far in as the 6-minute data stays worth reading.
     private let minZoomSpan: TimeInterval = 4 * 3600
 
-    @State private var showSlack = false
-    @State private var showCurrents = false
     @State private var zoomSpan: TimeInterval?
     /// Nil sits on the start of `day`.
     @State private var zoomStart: Date?
@@ -65,7 +65,7 @@ struct TideFigure: View {
         return (start, start.addingTimeInterval(span))
     }
 
-    /// The day under the middle of the screen, so the toggle names what is mostly shown.
+    /// The day under the middle of the screen, so the stepper names what is mostly shown.
     private var middleDay: Int {
         let middle = window.start.addingTimeInterval(window.end.timeIntervalSince(window.start) / 2)
         let offset = Conditions.calendar.dateComponents(
@@ -76,42 +76,6 @@ struct TideFigure: View {
     private func syncDay() { day = middleDay }
 
     var body: some View {
-        VStack(spacing: 0) {
-            plot
-            HStack(spacing: 20) {
-                toggle("SLACK", isOn: $showSlack)
-                toggle("CURRENTS", isOn: $showCurrents)
-                Spacer()
-            }
-            .frame(height: toggleHeight)
-        }
-    }
-
-    /// An ink box, filled and ticked in paper when on — a printed form's checkbox.
-    private func toggle(_ label: String, isOn: Binding<Bool>) -> some View {
-        Button { isOn.wrappedValue.toggle() } label: {
-            HStack(spacing: 6) {
-                RoundedRectangle(cornerRadius: 1)
-                    .strokeBorder(Theme.ink, lineWidth: 1)
-                    .background(isOn.wrappedValue ? Theme.ink : .clear)
-                    .overlay {
-                        if isOn.wrappedValue {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 6.5, weight: .heavy))
-                                .foregroundStyle(Theme.paper)
-                        }
-                    }
-                    .frame(width: 10, height: 10)
-                MicroLabel(text: label, tracking: 1.29,
-                           color: isOn.wrappedValue ? Theme.ink : Theme.mute)
-            }
-            // Grows the hit area without growing the row.
-            .contentShape(Rectangle().inset(by: -6))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var plot: some View {
         GeometryReader { geometry in
             // The canvas runs `overflow` wider than the figure each side, so an axis label
             // centred on an end tick has room; the frame the gestures read stays the figure's.
@@ -194,8 +158,7 @@ struct TideFigure: View {
     /// The baseline leaves room under it for the axis labels; the curve fills the rest.
     private func rows(_ height: CGFloat) -> (baseline: CGFloat, amplitude: CGFloat) {
         let baseline = height - axisHeight
-        // The curve tops out 28pt down, below the two lines of the slack label.
-        return (baseline, baseline - 28)
+        return (baseline, baseline - peak)
     }
 
     private var canvas: some View {
@@ -204,8 +167,17 @@ struct TideFigure: View {
             context.translateBy(x: overflow, y: 0)
             let (baseline, amplitude) = rows(size.height)
 
+            // Behind everything, so the curve and its dots read over them.
+            for slack in slacks {
+                let from = max(x(slack.start, width), 0)
+                let to = min(x(slack.end, width), width)
+                guard to > from else { continue }
+                context.fill(Path(CGRect(x: from, y: top, width: to - from, height: baseline - top)),
+                             with: .color(Theme.ink.opacity(0.09)))
+            }
+
             for step in 1..<3 {
-                let y = 28 + (baseline - 28) * CGFloat(step) / 3
+                let y = peak + (baseline - peak) * CGFloat(step) / 3
                 context.stroke(Path { $0.move(to: CGPoint(x: 0, y: y))
                                       $0.addLine(to: CGPoint(x: width, y: y)) },
                                with: .color(Theme.faint), lineWidth: 0.6)
@@ -216,42 +188,6 @@ struct TideFigure: View {
                 let focus = swims.map { (x($0.range.lowerBound, width)...x($0.range.upperBound, width), $0.east) }
                 halftone(context, clippedTo: area, width: width, height: baseline, focus: focus)
                 context.stroke(line, with: .color(Theme.ink), lineWidth: 1.7)
-
-                if showCurrents {
-                    let periods = currentPeriods()
-                    for (period, phase) in zip(periods, hatchPhases(periods, width: width)) {
-                        currentArea(context, period, phase: phase, area: area, size: size,
-                                    width: width, baseline: baseline, amplitude: amplitude)
-                    }
-                }
-            }
-
-            if showSlack {
-                var reached = -CGFloat.infinity
-                for slack in slacks {
-                    let from = max(x(slack.start, width), 0)
-                    let to = min(x(slack.end, width), width)
-                    guard to > from else { continue }
-                    context.fill(Path(CGRect(x: from, y: 4, width: to - from, height: baseline - 4)),
-                                 with: .color(Theme.spot.opacity(0.14)))
-
-                    let lines = ["SLACK", Self.clock.string(from: slack.start) + "–"
-                                 + Self.clock.string(from: slack.end)]
-                    let labels = lines.map {
-                        context.resolve(Text($0).font(Theme.micro(7)).foregroundStyle(Theme.spot))
-                    }
-                    // Centred on the whole window, never nudged: a label that would run off
-                    // the graph or touch the one before it is left off.
-                    let centre = (x(slack.start, width) + x(slack.end, width)) / 2
-                    let half = (labels.map { $0.measure(in: size).width }.max() ?? 0) / 2
-                    guard centre - half >= 0, centre + half <= width,
-                          centre - half > reached + 4 else { continue }
-                    reached = centre + half
-                    for (row, label) in labels.enumerated() {
-                        context.draw(label, at: CGPoint(x: centre, y: 4 + CGFloat(row) * 10),
-                                     anchor: .top)
-                    }
-                }
             }
 
             context.stroke(Path { $0.move(to: CGPoint(x: 0, y: baseline))
@@ -280,7 +216,7 @@ struct TideFigure: View {
 
             let marker = x(now, width)
             if !shifting, marker >= 0, marker <= width {
-                context.stroke(Path { $0.move(to: CGPoint(x: marker, y: 4))
+                context.stroke(Path { $0.move(to: CGPoint(x: marker, y: top))
                                       $0.addLine(to: CGPoint(x: marker, y: baseline)) },
                                with: .color(Theme.ink), lineWidth: 1)
                 if let height = Conditions.height(at: now, in: curve) {
@@ -364,8 +300,6 @@ struct TideFigure: View {
                     let under = focus.filter { $0.span.contains(column) }.map(\.east)
                     let east = under.count == 2 ? index.isMultiple(of: 2) : under.first
                     guard let east else {
-                        // The hatching stands in for the faint dots; only arrows stay.
-                        if showCurrents { continue }
                         layer.fill(Path(ellipseIn: CGRect(x: column - 1.2, y: row - 1.2,
                                                           width: 2.4, height: 2.4)),
                                    with: .color(faded))
@@ -396,98 +330,6 @@ struct TideFigure: View {
         return path
     }
 
-    /// Each run of the Gate in one direction, split where the velocity crosses zero
-    /// (interpolated between the 6-minute samples, as `Conditions.velocity` is).
-    private func currentPeriods() -> [(start: Date, end: Date, flood: Bool)] {
-        guard let first = samples.first, let last = samples.last else { return [] }
-        var periods: [(start: Date, end: Date, flood: Bool)] = []
-        var start = first.time
-        var flood = first.velocity > 0
-        for (a, b) in zip(samples, samples.dropFirst()) where (b.velocity > 0) != flood {
-            let crossing = a.time.addingTimeInterval(
-                b.time.timeIntervalSince(a.time) * a.velocity / (a.velocity - b.velocity))
-            periods.append((start, crossing, flood))
-            start = crossing
-            flood.toggle()
-        }
-        periods.append((start, last.time, flood))
-        return periods
-    }
-
-    /// Where each period's hatching sits along the axis, chosen so the lines of one period
-    /// meet the lines of the next exactly on the boundary between them. A `/` and a `\`
-    /// meet there when their phases mirror about the boundary: next = 2 * boundary - this.
-    /// Walked from the first period, so it holds however the graph is zoomed or dragged.
-    private func hatchPhases(_ periods: [(start: Date, end: Date, flood: Bool)],
-                             width: CGFloat) -> [CGFloat] {
-        guard let first = periods.first else { return [] }
-        var phases = [x(first.start, width)]
-        for period in periods.dropFirst() {
-            phases.append(2 * x(period.start, width) - phases.last!)
-        }
-        return phases
-    }
-
-    /// The area under the curve for one flood or ebb, hatched in ink with its name and span
-    /// in the middle of the whole period (not of what is on screen), on a paper-coloured
-    /// patch so the hatching does not run through the type.
-    private func currentArea(_ context: GraphicsContext,
-                             _ period: (start: Date, end: Date, flood: Bool), phase: CGFloat,
-                             area: Path, size: CGSize,
-                             width: CGFloat, baseline: CGFloat, amplitude: CGFloat) {
-        let fullFrom = x(period.start, width)
-        let fullTo = x(period.end, width)
-        let from = max(fullFrom, 0)
-        let to = min(fullTo, width)
-        guard to > from else { return }
-
-        // Hatched in ink, the two directions opposed: flood leans / and ebb leans \.
-        context.drawLayer { layer in
-            layer.clip(to: Path(CGRect(x: from, y: 0, width: to - from, height: baseline)))
-            layer.clip(to: area)
-            let pitch: CGFloat = 5 * 2.0.squareRoot()
-            var hatch = Path()
-            var cx = phase + pitch * ((from - baseline - phase) / pitch).rounded(.down)
-            while cx < to + baseline {
-                hatch.move(to: CGPoint(x: cx, y: baseline))
-                hatch.addLine(to: CGPoint(x: cx + (period.flood ? baseline : -baseline), y: 0))
-                cx += pitch
-            }
-            layer.stroke(hatch, with: .color(Theme.ink.opacity(0.2)), lineWidth: 0.9)
-        }
-
-        let span = Self.clock.string(from: period.start) + "–" + Self.clock.string(from: period.end)
-        let title = context.resolve(Text(period.flood ? "FLOOD" : "EBB")
-            .font(Theme.micro(7)).foregroundStyle(Theme.ink))
-        let times = context.resolve(Text(span).font(Theme.micro(7)).foregroundStyle(Theme.ink))
-        let labelWidth = max(times.measure(in: size).width, title.measure(in: size).width)
-        let patch = labelWidth + 8
-        // Tied to the middle of the whole period, so it moves with the area and nowhere else.
-        // Left off when it would spill out of the period or off the graph, or when the curve
-        // comes down into it — the colours alone carry a four-day view.
-        let mid = (fullFrom + fullTo) / 2
-        guard patch < fullTo - fullFrom, mid - patch / 2 >= 0, mid + patch / 2 <= width
-        else { return }
-        let top = baseline - 22
-        let clear = stride(from: -1.0, through: 1.0, by: 0.25).allSatisfy { step in
-            let at = mid + CGFloat(step) * patch / 2
-            guard let height = Conditions.height(at: time(at: at, width: width), in: curve)
-            else { return false }
-            return baseline - CGFloat(normalise(height)) * amplitude < top - 3
-        }
-        guard clear else { return }
-        // A patch hugging each line of type, as on a story caption, not one box.
-        for (label, y) in [(title, baseline - 16), (times, baseline - 7)] {
-            let box = label.measure(in: size)
-            context.fill(Path(roundedRect: CGRect(x: mid - box.width / 2 - 3, y: y - box.height / 2 - 1,
-                                                  width: box.width + 6, height: box.height + 2),
-                              cornerRadius: 3),
-                         with: .color(Theme.paper))
-        }
-        context.draw(title, at: CGPoint(x: mid, y: baseline - 16), anchor: .center)
-        context.draw(times, at: CGPoint(x: mid, y: baseline - 7), anchor: .center)
-    }
-
     /// Six-hour marks over a day, midnights over the whole range — the same axis cannot
     /// carry both, and twenty labels at 7pt is a smear. Pinched in, the marks close up
     /// to three hours and then to every hour.
@@ -514,15 +356,6 @@ struct TideFigure: View {
         default: "\(hour % 12 == 0 ? 12 : hour % 12)\(hour < 12 ? "AM" : "PM")"
         }
     }
-
-    /// `11:17AM`, for the slack box.
-    private static let clock: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = API.zone
-        formatter.dateFormat = "h:mma"
-        return formatter
-    }()
 
     private static let weekday: DateFormatter = {
         let formatter = DateFormatter()

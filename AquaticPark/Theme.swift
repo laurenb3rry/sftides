@@ -35,6 +35,9 @@ enum Theme {
     // MARK: - Metrics
 
     static let margin: CGFloat = 26
+    /// Type to a section rule, above or below it. Matched to what the tide figure's axis
+    /// labels already left over the strip's rule, so every section break reads the same.
+    static let ruleGap: CGFloat = 15
     static let labelTracking: CGFloat = 1.3
 }
 

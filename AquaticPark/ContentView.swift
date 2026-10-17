@@ -5,9 +5,10 @@ import SwiftUI
 /// height, and the figures absorb whatever is left. On a shorter phone they get shorter;
 /// nothing ever moves off the bottom edge.
 ///
-/// Reading order is the order a swimmer wants it in — when to go, then today at a glance,
-/// then what the water is right now, then the two figures behind the call, then the three
-/// routes. The cove is last, not first, because it is never the question.
+/// Reading order is the order a swimmer wants it in — the bay moving, then when to go,
+/// then the tide figure behind the call, then what the water is at the time it's reading,
+/// then the three routes. The cove is last, not first, because it is never the question.
+/// The figure's caption flips everything from the graph down to the tide table and back.
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var curve: [TideSample] = []
@@ -18,6 +19,7 @@ struct ContentView: View {
     @State private var waterTemp: WaterTempReading?
     @State private var now = Date()
     @State private var banner = Banner.none
+    /// The figure block shows the tide table instead of the graph, strip and routes.
     @State private var showingTable = false
     /// Which of the fetched days the tide figure is on, as an offset from today.
     @State private var day = 0
@@ -38,7 +40,18 @@ struct ContentView: View {
     /// Breathing room between sections that would otherwise abut. Subtracted out of
     /// `figures`' flexible space wherever it falls inside the GeometryReader, so adding
     /// air between elements never grows the chart or the grid.
-    private let sectionGap: CGFloat = 16
+    private let sectionGap: CGFloat = 10
+    /// Between the strip and the route rows: the readings overhang the strip by 2pt, so
+    /// this leaves `ruleGap` between them and the routes' rule.
+    private let routeGap: CGFloat = Theme.ruleGap + 2
+    /// What the graph's toggle row (22pt), the old footer (32pt) and the wider gaps used to
+    /// take, less what the even rule gaps took back (against a 31pt caption, a 38pt strip,
+    /// an 8pt route gap and 72pt of routes). Held back so the figure keeps the height it
+    /// had; the paper gathers at the foot.
+    private var freedHeight: CGFloat {
+        64 - (FigureCaption.height - 31) - (NowStrip.viewHeight - 38) - (routeGap - 8)
+            - (RouteRows.height - 72)
+    }
 
     /// §5.8. A refresh failure the cache can still cover within TTL stays `.none` —
     /// the spec asks for no visible difference there.
@@ -82,21 +95,14 @@ struct ContentView: View {
         VStack(spacing: 0) {
             Masthead(now: now)
             notice
+            // Reads the same time as the strip, so scrubbing the figure runs the bay too.
+            CurrentsMap(knots: Conditions.velocity(at: marker ?? now, in: samples))
+                .containerRelativeFrame(.vertical) { length, _ in length * 0.26 }
             SwimWindowPair(west: west, east: east)
             figures
-            selectionNotice
-            RouteRows(routes: displayedRoutes)
-            footer
         }
         .padding(.top, 8)
         .background(Theme.paper)
-        .sheet(isPresented: $showingTable) {
-            TideTable(extremes: extremes, slacks: slacks, marker: now) { _ in
-                showingTable = false
-            }
-            .background(Theme.paper)
-            .presentationDetents([.medium, .large])
-        }
         .onChange(of: scenePhase) { _, phase in
             // Pull-to-refresh went with the scroll view. Returning to the app is the
             // everyday retry; the notice row is tappable for the rest (§5.8).
@@ -107,40 +113,96 @@ struct ContentView: View {
 
     // MARK: - Figures
 
-    /// The only flexible block on the sheet. It is handed the leftover height and splits
-    /// it between the two figures in the proportion the mockup used, so a short phone
-    /// shrinks both rather than clipping one.
+    /// The only flexible block on the sheet: the tide figure takes whatever height is
+    /// left once the strip and routes have theirs, so a short phone shrinks it rather
+    /// than clipping anything. With TABLE picked, the table drops down over all of it.
+    ///
+    /// The window grid is off the sheet for now. Its data (`grid`, `selectedCell`) is
+    /// still derived — the day stepper reads `grid` — and `windowGrid` is kept whole
+    /// for putting back.
     private var figures: some View {
         GeometryReader { geometry in
-            let space = max(geometry.size.height - 2 * FigureCaption.height
-                             - NowStrip.viewHeight - sectionGap, 160)
-            // The grid keeps the height it had before the strip got shorter and the gap
-            // above the figure closed (34pt + 10pt); all of that goes to the tide figure.
-            let gridHeight = 0.42 * (space - 44)
+            let space = max(geometry.size.height - FigureCaption.height - NowStrip.viewHeight
+                             - sectionGap - RouteRows.height - routeGap - freedHeight, 120)
             VStack(spacing: 0) {
-                FigureCaption(left: "TIDE GRAPH", right: "",
-                              trailing: AnyView(dayStepper))
-                TideFigure(curve: curve, samples: samples, slacks: slacks, swims: swims,
-                           fullWindow: Conditions.chartWindow(now: now), day: $day, now: marker ?? now, onScrub: { marker = $0 })
-                    .frame(height: space - gridHeight)
-                    .padding(.horizontal, Theme.margin)
-                    .padding(.bottom, sectionGap)
-                NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
-                         rising: Conditions.isRising(at: marker ?? now, in: curve),
-                         water: waterTemp?.temperature,
-                         weather: Conditions.weather(at: marker ?? now, in: forecast),
-                         knots: Conditions.velocity(at: marker ?? now, in: samples),
-                         label: marker.map { "TIDE AT " + Conditions.handClock($0).uppercased() }
-                             ?? "TIDE NOW")
-                FigureCaption(left: "UPCOMING EAST/WEST WINDOWS",
-                              right: "GOOD ■ FAIR ▨ POOR □")
-                WindowGrid(days: grid, now: now,
-                           selected: selectedCell,
-                           onSelect: { selectedCell = $0; marker = $0; day = dayOffset(of: $0) },
-                           onSelectDay: { select(day: $0) })
-                    .frame(height: gridHeight)
-                    .padding(.horizontal, Theme.margin)
+                FigureCaption(left: "", right: "", leading: AnyView(figureTabs),
+                              // Hidden rather than removed, so the caption keeps its height.
+                              trailing: AnyView(dayStepper.opacity(showingTable ? 0 : 1)
+                                  .disabled(showingTable)))
+                ZStack(alignment: .top) {
+                    if showingTable {
+                        TideTable(extremes: extremes, slacks: slacks, marker: now) { time in
+                            marker = time
+                            day = dayOffset(of: time)
+                            show(table: false)
+                        }
+                        .padding(.top, 18)
+                        .transition(.move(edge: .top))
+                    } else {
+                        graph(space: space)
+                            .transition(.opacity)
+                    }
+                }
+                .frame(maxHeight: .infinity, alignment: .top)
+                .clipped()
             }
+        }
+    }
+
+    /// Graph, the readings at the marker, and the three routes — East to the Wharf is
+    /// the last line on the sheet.
+    private func graph(space: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            TideFigure(curve: curve, samples: samples, slacks: slacks, swims: swims,
+                       fullWindow: Conditions.chartWindow(now: now), day: $day, now: marker ?? now, onScrub: { marker = $0 })
+                .frame(height: space)
+                .padding(.horizontal, Theme.margin)
+                .padding(.bottom, sectionGap)
+            NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
+                     rising: Conditions.isRising(at: marker ?? now, in: curve),
+                     water: waterTemp?.temperature,
+                     weather: Conditions.weather(at: marker ?? now, in: forecast),
+                     knots: Conditions.velocity(at: marker ?? now, in: samples),
+                     label: marker.map { "TIDE AT " + Conditions.handClock($0).uppercased() }
+                         ?? "TIDE NOW")
+            RouteRows(routes: displayedRoutes)
+                .padding(.top, routeGap)
+        }
+    }
+
+    /// `TIDE GRAPH  TABLE` in the figure's caption: the one picked is in ink.
+    private var figureTabs: some View {
+        HStack(spacing: 16) {
+            tab("TIDE GRAPH", table: false)
+            tab("TABLE", table: true)
+        }
+    }
+
+    private func tab(_ title: String, table: Bool) -> some View {
+        Button { show(table: table) } label: {
+            MicroLabel(text: title, tracking: 1.29,
+                       color: showingTable == table ? Theme.ink : Theme.mute)
+                .contentShape(Rectangle().inset(by: -8))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func show(table: Bool) {
+        withAnimation(.easeInOut(duration: 0.28)) { showingTable = table }
+    }
+
+    /// Not on the sheet for now; see `figures`. Goes back under the strip with
+    /// `selectionNotice` below it.
+    private func windowGrid(height: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            FigureCaption(left: "UPCOMING EAST/WEST WINDOWS",
+                          right: "GOOD ■ FAIR ▨ POOR □")
+            WindowGrid(days: grid, now: now,
+                       selected: selectedCell,
+                       onSelect: { selectedCell = $0; marker = $0; day = dayOffset(of: $0) },
+                       onSelectDay: { select(day: $0) })
+                .frame(height: height)
+                .padding(.horizontal, Theme.margin)
         }
     }
 
@@ -161,21 +223,6 @@ struct ContentView: View {
         } else {
             Color.clear.frame(height: 20)
         }
-    }
-
-    // MARK: - Footer
-
-    private var footer: some View {
-        HStack {
-            Button { showingTable = true } label: {
-                MicroLabel(text: "TABLE", size: 8.4, tracking: 1.43)
-            }
-            Spacer()
-        }
-        .padding(.horizontal, Theme.margin)
-        .padding(.top, 8)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.ink).frame(height: 2) }
-        .padding(.top, 14)
     }
 
     private static let weekday: DateFormatter = {

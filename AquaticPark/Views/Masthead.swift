@@ -49,19 +49,21 @@ struct Masthead: View {
 struct FigureCaption: View {
     let left: String
     let right: String
+    /// Stands in for `left` when the label needs to be tappable.
+    var leading: AnyView?
     /// Stands in for `right` when the corner needs to be tappable.
     var trailing: AnyView?
 
-    static let height: CGFloat = 31
+    static let height: CGFloat = 25 + Theme.ruleGap
 
     var body: some View {
         HStack {
-            MicroLabel(text: left, tracking: 1.29)
+            if let leading { leading } else { MicroLabel(text: left, tracking: 1.29) }
             Spacer()
             if let trailing { trailing } else { MicroLabel(text: right, tracking: 1.29) }
         }
         .padding(.horizontal, Theme.margin)
-        .padding(.top, 6)
+        .padding(.top, Theme.ruleGap)
         .overlay(alignment: .top) {
             Rectangle().fill(Theme.hair).frame(height: 1)
         }
