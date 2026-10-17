@@ -81,13 +81,14 @@ struct ContentView: View {
         Conditions.routeRead(at: now, samples: samples, events: events, forecast: forecast)
     }
 
-    /// What the route rows show: live conditions, unless a grid cell is selected, in
-    /// which case it is that hour's conditions instead. The advisory banner above still
-    /// reads off live `now` — a hypothetical gale ten hours from now shouldn't interrupt
-    /// the sheet today.
+    /// What the route rows show: the conditions at whatever time the sheet is reading —
+    /// a selected grid cell, else the scrub marker, else live `now` — so dragging the tide
+    /// figure walks the GO along with the map and the strip. The advisory banner above
+    /// still reads off live `now`: a hypothetical gale ten hours from now shouldn't
+    /// interrupt the sheet today.
     private var displayedRoutes: [RouteVerdict] {
-        guard let selectedCell else { return route.routes }
-        return Conditions.routeRead(at: selectedCell, samples: samples, events: events,
+        guard let time = selectedCell ?? marker else { return route.routes }
+        return Conditions.routeRead(at: time, samples: samples, events: events,
                                     forecast: forecast).routes
     }
 
@@ -96,7 +97,8 @@ struct ContentView: View {
             Masthead(now: now)
             notice
             // Reads the same time as the strip, so scrubbing the figure runs the bay too.
-            CurrentsMap(knots: Conditions.velocity(at: marker ?? now, in: samples))
+            CurrentsMap(knots: Conditions.velocity(at: marker ?? now, in: samples),
+                        water: waterTemp?.range)
                 .containerRelativeFrame(.vertical) { length, _ in length * 0.26 }
             SwimWindowPair(west: west, east: east)
             figures

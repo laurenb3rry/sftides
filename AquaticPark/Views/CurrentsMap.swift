@@ -8,6 +8,8 @@ import SwiftUI
 struct CurrentsMap: View {
     /// Signed knots at the Gate from `Conditions.velocity`, + flood. Nil holds the water still.
     let knots: Double?
+    /// Today's water temperature low and high, for the ends of the key. Nil leaves the key off.
+    let water: (low: Double, high: Double)?
 
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -26,7 +28,7 @@ struct CurrentsMap: View {
                     }
                 }
                 // Static, so the halftone is drawn once per size rather than every frame.
-                Canvas { context, _ in Bay.drawLand(in: &context, frame: frame) }
+                Canvas { context, _ in Bay.drawLand(in: &context, frame: frame, water: water) }
             }
         }
         .clipped()
@@ -52,10 +54,7 @@ private final class Flow {
     private var frame: Bay.Frame?
     private static let trailLength = 8
 
-    /// Palette C from the v7 mockups: cool at the Gate, warming into the bay, re-inked
-    /// dark enough to read on paper. Three weights per hue for slow, moving and fast.
-    private static let hues: [Color] = ([0x1D3B8F, 0x1F6F96, 0x1C8A77, 0xC98A0B, 0xC0391B] as [UInt32])
-        .map { Color(hex: $0) }
+    /// Three weights per hue (`Bay.hues`) for slow, moving and fast.
     private static let alphas: [Double] = [0.3, 0.6, 0.9]
     private static let widths: [CGFloat] = [0.6, 0.85, 1.2]
 
@@ -65,13 +64,13 @@ private final class Flow {
     }
 
     func draw(in context: inout GraphicsContext) {
-        var paths = Array(repeating: Path(), count: Self.hues.count * 3)
+        var paths = Array(repeating: Path(), count: Bay.hues.count * 3)
         for particle in particles where particle.trail.count > 1 {
             let bucket = Bay.hue(particle.lon, particle.lat) * 3 + min(2, Int(particle.speed * 3))
             paths[bucket].addLines(particle.trail)
         }
         for (index, path) in paths.enumerated() {
-            context.stroke(path, with: .color(Self.hues[index / 3].opacity(Self.alphas[index % 3])),
+            context.stroke(path, with: .color(Bay.hues[index / 3].opacity(Self.alphas[index % 3])),
                            style: StrokeStyle(lineWidth: Self.widths[index % 3], lineCap: .round,
                                               lineJoin: .round))
         }
@@ -135,6 +134,11 @@ private final class Flow {
 
 /// Hand-traced geography and a sketched flood field. Coordinates are (longitude, latitude).
 private enum Bay {
+    /// Palette C from the v7 mockups: cool at the Gate, warming into the bay, re-inked
+    /// dark enough to read on paper. The particles and the key share it.
+    static let hues: [Color] = ([0x1D3B8F, 0x1F6F96, 0x1C8A77, 0xC98A0B, 0xC0391B] as [UInt32])
+        .map { Color(hex: $0) }
+
     /// Shrinks a degree of longitude to the length of a degree of latitude at this latitude.
     static let kx = cos(37.83 * .pi / 180)
 
@@ -180,9 +184,7 @@ private enum Bay {
         [(-122.49, 37.91), (-122.478, 37.888), (-122.47, 37.879), (-122.4655, 37.871), (-122.4615, 37.8645),
          (-122.457, 37.8645), (-122.4535, 37.8695), (-122.4505, 37.8735), (-122.445, 37.8775), (-122.437, 37.8805),
          (-122.428, 37.887), (-122.418, 37.91)],
-        // Angel Island
-        [(-122.4475, 37.8625), (-122.4445, 37.8685), (-122.436, 37.8715), (-122.4255, 37.8695), (-122.4185, 37.8625),
-         (-122.4205, 37.854), (-122.4295, 37.8505), (-122.4405, 37.8525)],
+        angelIsland,
         // Alcatraz
         [(-122.4262, 37.8262), (-122.4228, 37.8283), (-122.4196, 37.827), (-122.4232, 37.8249)],
         // Treasure Island
@@ -196,6 +198,10 @@ private enum Bay {
          (-122.3, 37.845), (-122.298, 37.91), (-122.2, 37.91), (-122.2, 37.76)],
     ]
 
+    /// Named because the temperature key measures off its shore.
+    private static let angelIsland = [(-122.4475, 37.8625), (-122.4445, 37.8685), (-122.436, 37.8715), (-122.4255, 37.8695), (-122.4185, 37.8625),
+        (-122.4205, 37.854), (-122.4295, 37.8505), (-122.4405, 37.8525)]
+
     private static let muniPier = [(-122.4245, 37.8062), (-122.4248, 37.8085), (-122.4242, 37.8102),
                                    (-122.4225, 37.8112), (-122.4205, 37.8113)]
     private static let hydeStPier = [(-122.4212, 37.8068), (-122.4214, 37.8098)]
@@ -206,10 +212,10 @@ private enum Bay {
 
     private enum Anchor { case leading, centre, trailing }
     private static let labels: [(String, Double, Double, Anchor)] = [
-        ("SAUSALITO", -122.4815, 37.8565, .trailing), ("TIBURON", -122.462, 37.884, .centre),
-        ("MARIN", -122.52, 37.842, .centre), ("ANGEL I.", -122.433, 37.8612, .centre),
+        ("SAUSALITO", -122.4922, 37.8355, .centre), ("TIBURON", -122.462, 37.884, .centre),
+        ("MARIN", -122.52, 37.842, .centre), ("ANGEL\nISLAND", -122.4315, 37.8566, .centre),
         ("ALCATRAZ", -122.4185, 37.8266, .leading), ("GOLDEN GATE", -122.489, 37.8183, .centre),
-        ("TREASURE I.", -122.37, 37.8232, .centre), ("BAY BRIDGE", -122.3800, 37.7965, .leading),
+        ("TREASURE\nISLAND", -122.3705, 37.8235, .centre), ("BAY BRIDGE", -122.3800, 37.7965, .leading),
         ("SAN FRANCISCO", -122.447, 37.792, .centre),
     ]
 
@@ -319,7 +325,8 @@ private enum Bay {
 
     // MARK: - Drawing
 
-    static func drawLand(in context: inout GraphicsContext, frame: Frame) {
+    static func drawLand(in context: inout GraphicsContext, frame: Frame,
+                         water: (low: Double, high: Double)?) {
         func path(_ points: [(Double, Double)]) -> [CGPoint] { points.map { frame.point($0.0, $0.1) } }
 
         var shore = Path()
@@ -367,21 +374,67 @@ private enum Bay {
         context.fill(Path(ellipseIn: dot), with: .color(Theme.spot))
         context.stroke(Path(ellipseIn: dot), with: .color(Theme.paper), lineWidth: 1.4)
         label("AQUATIC PARK", at: tag, anchor: .leading, color: Theme.spot, in: &context)
+
+        // The key, in open water between Angel Island and Treasure Island.
+        // ponytail: the hues are laid out by position (`hue`), not read off a temperature
+        // grid, so the ends are today's real range at the one sensor but the colours between
+        // are not placed by it. SFBOFS's temperature grid would make the whole map agree.
+        guard let water else { return }
+        let low = degrees(water.low), high = degrees(water.high)
+        // Each reading centres under its end of the bar. The high one stops at the page
+        // margin, level with the masthead's time; the bar then runs west until it is as far
+        // from Angel Island's shore as its east end is from the screen's edge.
+        let highWidth = context.resolve(Text(high).font(Theme.micro(6.6)).tracking(1.2))
+            .measure(in: frame.size).width
+        let y = frame.point(0, 37.8509).y
+        let right = CGPoint(x: frame.size.width - Theme.margin - highWidth / 2, y: y)
+        let angel = angelIsland.map { frame.point($0.0, $0.1) }
+        let gap = frame.size.width - right.x
+        var left = right
+        while left.x > 0, distance(from: CGPoint(x: left.x - 0.5, y: y), to: angel) >= gap {
+            left.x -= 0.5
+        }
+        var bar = Path()
+        bar.move(to: left)
+        bar.addLine(to: right)
+        context.stroke(bar, with: .color(Theme.paper), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+        context.stroke(bar, with: .linearGradient(Gradient(colors: hues), startPoint: left, endPoint: right),
+                       style: StrokeStyle(lineWidth: 3, lineCap: .round))
+        label(low, at: CGPoint(x: left.x, y: y + 9), anchor: .centre, color: Theme.ink, in: &context)
+        label(high, at: CGPoint(x: right.x, y: y + 9), anchor: .centre, color: Theme.ink, in: &context)
     }
 
-    /// Small caps with a paper halo, so a name stays legible over moving water.
+    /// Nearest approach of a point to a closed outline.
+    private static func distance(from point: CGPoint, to outline: [CGPoint]) -> CGFloat {
+        zip(outline, outline.dropFirst() + outline.prefix(1)).map { a, b in
+            let dx = b.x - a.x, dy = b.y - a.y, length = dx * dx + dy * dy
+            let u = length > 0 ? min(1, max(0, ((point.x - a.x) * dx + (point.y - a.y) * dy) / length)) : 0
+            return hypot(a.x + u * dx - point.x, a.y + u * dy - point.y)
+        }.min() ?? .infinity
+    }
+
+    /// One decimal, like the strip's WATER reading: a day's range is often under a degree.
+    private static func degrees(_ value: Double) -> String { String(format: "%.1f°F", value) }
+
+    /// Small caps with a paper halo, so a name stays legible over moving water. A `\n`
+    /// stacks the name in lines centred on `point`, for an island to hold it inside.
     private static func label(_ name: String, at point: CGPoint, anchor: Anchor, color: Color,
                               in context: inout GraphicsContext) {
-        let text = Text(name).font(Theme.micro(6.6)).tracking(1.2)
         let unit: UnitPoint = switch anchor {
         case .leading: .leading
         case .centre: .center
         case .trailing: .trailing
         }
-        let halo = context.resolve(text.foregroundStyle(Theme.paper))
-        for (dx, dy) in [(-1.2, 0.0), (1.2, 0), (0, -1.2), (0, 1.2), (-1, -1), (1, 1), (-1, 1), (1, -1)] {
-            context.draw(halo, at: CGPoint(x: point.x + dx, y: point.y + dy), anchor: unit)
+        let lines = name.split(separator: "\n").map(String.init)
+        let leading: CGFloat = 8.5
+        for (row, line) in lines.enumerated() {
+            let text = Text(line).font(Theme.micro(6.6)).tracking(1.2)
+            let at = CGPoint(x: point.x, y: point.y + (CGFloat(row) - CGFloat(lines.count - 1) / 2) * leading)
+            let halo = context.resolve(text.foregroundStyle(Theme.paper))
+            for (dx, dy) in [(-1.2, 0.0), (1.2, 0), (0, -1.2), (0, 1.2), (-1, -1), (1, 1), (-1, 1), (1, -1)] {
+                context.draw(halo, at: CGPoint(x: at.x + dx, y: at.y + dy), anchor: unit)
+            }
+            context.draw(context.resolve(text.foregroundStyle(color)), at: at, anchor: unit)
         }
-        context.draw(context.resolve(text.foregroundStyle(color)), at: point, anchor: unit)
     }
 }

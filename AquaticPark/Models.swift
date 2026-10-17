@@ -24,6 +24,15 @@ struct TideExtreme: Codable, Identifiable {
 struct WaterTempReading: Codable {
     let time: Date
     let temperature: Double // °F
+    /// Today's lowest and highest at the sensor so far. Optional so a cache written
+    /// before they were fetched still decodes.
+    var low: Double?
+    var high: Double?
+
+    var range: (low: Double, high: Double)? {
+        guard let low, let high else { return nil }
+        return (low, high)
+    }
 }
 
 enum CurrentEventType: String, Codable {

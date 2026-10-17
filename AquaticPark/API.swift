@@ -60,14 +60,19 @@ enum API {
     }
 
     /// Observed only — NOAA does not forecast water temperature (§5.4).
+    /// The whole day so far rather than just the latest reading, so the map's key can
+    /// run from today's low to today's high. Gaps in the sensor's feed come back blank.
     static func waterTemperature() async throws -> WaterTempReading {
         let url = noaaURL(station: waterTempStation,
-                          ["product": "water_temperature", "date": "latest"])
-        guard let row = try await get(url, as: WaterTempResponse.self).data.first else {
+                          ["product": "water_temperature", "date": "today"])
+        let rows = try await get(url, as: WaterTempResponse.self).data.filter { !$0.v.isEmpty }
+        guard let latest = rows.last else {
             throw APIError.noaa("No water temperature reported")
         }
-        return WaterTempReading(time: try noaaDate(row.t),
-                                temperature: try number(row.v) + waterTempOffset)
+        let readings = try rows.map { try number($0.v) + waterTempOffset }
+        return WaterTempReading(time: try noaaDate(latest.t),
+                                temperature: try number(latest.v) + waterTempOffset,
+                                low: readings.min(), high: readings.max())
     }
 
     // MARK: - Currents
