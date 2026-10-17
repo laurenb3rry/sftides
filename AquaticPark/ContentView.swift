@@ -40,18 +40,14 @@ struct ContentView: View {
     /// Breathing room between sections that would otherwise abut. Subtracted out of
     /// `figures`' flexible space wherever it falls inside the GeometryReader, so adding
     /// air between elements never grows the chart or the grid.
-    private let sectionGap: CGFloat = 10
-    /// Between the strip and the route rows: the readings overhang the strip by 2pt, so
-    /// this leaves `ruleGap` between them and the routes' rule.
-    private let routeGap: CGFloat = Theme.ruleGap + 2
-    /// What the graph's toggle row (22pt), the old footer (32pt) and the wider gaps used to
-    /// take, less what the even rule gaps took back (against a 31pt caption, a 38pt strip,
-    /// an 8pt route gap and 72pt of routes). Held back so the figure keeps the height it
-    /// had; the paper gathers at the foot.
-    private var freedHeight: CGFloat {
-        64 - (FigureCaption.height - 31) - (NowStrip.viewHeight - 38) - (routeGap - 8)
-            - (RouteRows.height - 72)
-    }
+    /// Between the axis labels and the readings' crop marks.
+    private let sectionGap: CGFloat = 22
+    /// Between the tabs row and the top of the graph.
+    private let captionGap: CGFloat = 11
+    /// Between the strip's crop marks and the route rows.
+    private let routeGap: CGFloat = 6
+    /// Paper held back at the foot of the sheet, above the home indicator's safe area.
+    private let footGap: CGFloat = 23
 
     /// §5.8. A refresh failure the cache can still cover within TTL stays `.none` —
     /// the spec asks for no visible difference there.
@@ -124,8 +120,9 @@ struct ContentView: View {
     /// for putting back.
     private var figures: some View {
         GeometryReader { geometry in
-            let space = max(geometry.size.height - FigureCaption.height - NowStrip.viewHeight
-                             - sectionGap - RouteRows.height - routeGap - freedHeight, 120)
+            let space = max(geometry.size.height - FigureCaption.height - captionGap
+                             - NowStrip.viewHeight - sectionGap - RouteRows.height - routeGap
+                             - footGap, 120)
             VStack(spacing: 0) {
                 FigureCaption(left: "", right: "", leading: AnyView(figureTabs),
                               // Hidden rather than removed, so the caption keeps its height.
@@ -159,6 +156,7 @@ struct ContentView: View {
                        fullWindow: Conditions.chartWindow(now: now), day: $day, now: marker ?? now, onScrub: { marker = $0 })
                 .frame(height: space)
                 .padding(.horizontal, Theme.margin)
+                .padding(.top, captionGap)
                 .padding(.bottom, sectionGap)
             NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
                      rising: Conditions.isRising(at: marker ?? now, in: curve),

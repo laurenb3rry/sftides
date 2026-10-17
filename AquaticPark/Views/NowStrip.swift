@@ -1,13 +1,12 @@
 import SwiftUI
 
-/// The five readings a swimmer checks on the walk down. Hybrid setting throughout:
+/// The four readings a swimmer checks on the walk down. Hybrid setting throughout:
 /// the numbers are in her hand, the units stay printed, because a written `°` or `FT`
 /// at this size turns into a smudge.
 ///
-/// The row splits exactly in half: the tide reading and its rising/falling word share
-/// the left 50% evenly, water/air/current share the right 50% evenly. Both halves are
-/// fixed fractions, not natural widths, so a longer "TIDE AT ..." label while scrubbing
-/// never nudges anything to its right.
+/// Set between four corner marks, like registration marks on a proof, rather than in a
+/// box or between rules. The readings sit at their natural widths with equal gaps
+/// between them, so the spacing is even without any divider doing the work.
 struct NowStrip: View {
     let height: Double?
     let rising: Bool?
@@ -19,66 +18,75 @@ struct NowStrip: View {
     /// so the strip never reads as live when it isn't.
     var label: String = "TIDE NOW"
 
-    /// Measured from the rule to the bottom of the readings, which overhang it by 2pt.
-    static let viewHeight: CGFloat = Theme.ruleGap + 29.3
+    /// The readings (about 30pt) and the marks' breathing room above and below them.
+    static let viewHeight: CGFloat = 62
 
-    /// Printed numerals are 16pt, so the hand is 16pt scaled by the usual multiplier.
-    private let figure: CGFloat = 16
+    /// Printed numerals are 12pt, so the hand is 12pt scaled by the usual multiplier.
+    private let figure: CGFloat = 12
+    /// Between the marks and the readings, either side.
+    private let inset: CGFloat = 14
+    /// Wide enough for "falling", so the gaps after it don't change when it swaps with
+    /// "rising"; the word is centred in it.
+    private let directionWidth: CGFloat = 58
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
-            HStack(alignment: .top, spacing: 0) {
-                cell(label) {
-                    written(height.map(Self.oneDecimal) ?? "—")
-                    unit("FT")
-                }
-                cell(" ") {
+            cell(label, clipsLabel: true) {
+                // The cell wraps its value in a baseline row; this centre-aligned row sits
+                // inside it so the direction can be centred on the numeral.
+                HStack(alignment: .center, spacing: 0) {
+                    HStack(alignment: .lastTextBaseline, spacing: 0) {
+                        written(height.map(Self.oneDecimal) ?? "—")
+                        unit("FT")
+                    }
                     // The one word on the sheet that is both written and in colour, because
                     // it is the only reading that is a direction rather than a quantity.
+                    // Centred on the numeral's own midline, not its baseline.
                     HandwritingText(text: rising.map { $0 ? "rising" : "falling" } ?? "—",
-                                    size: 18, tracking: 0.2)
+                                    size: Theme.hand(figure), tracking: 0.2)
                         .foregroundStyle(Theme.spot)
+                        .frame(width: directionWidth)
+                        .padding(.leading, 6)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            HStack(alignment: .top, spacing: 0) {
-                cell("WATER", centered: true) {
-                    written(water.map(Self.oneDecimal) ?? "—")
-                    degree()
-                }
-                cell("AIR", centered: true) {
-                    written(weather.map { "\(Int($0.airTemperature.rounded()))" } ?? "—")
-                    degree()
-                }
-                cell("CURRENT", centered: true) {
-                    written(knots.map { Self.oneDecimal(abs($0)) } ?? "—")
-                    unit("KT")
-                }
+            Spacer(minLength: 8)
+            cell("WATER") {
+                written(water.map(Self.oneDecimal) ?? "—")
+                degree()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer(minLength: 8)
+            cell("AIR") {
+                written(weather.map { "\(Int($0.airTemperature.rounded()))" } ?? "—")
+                degree()
+            }
+            Spacer(minLength: 8)
+            cell("CURRENT") {
+                written(knots.map { Self.oneDecimal(abs($0)) } ?? "—")
+                unit("KT")
+            }
         }
+        .padding(.horizontal, inset)
+        .frame(height: Self.viewHeight)
+        .overlay { CropMarks().stroke(Theme.ink, lineWidth: 1) }
         .padding(.horizontal, Theme.margin)
-        // The label's caps sit 0.7pt into its line, so this lands them `ruleGap` under the rule.
-        .padding(.top, Theme.ruleGap - 0.7)
-        .frame(height: Self.viewHeight, alignment: .top)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
     }
 
-    /// Both halves claim an equal share — the left pair's share is fixed at 50% of the
-    /// row regardless of how long `label` gets while scrubbing, so nothing to its right
-    /// ever shifts; within each half, every cell claims an equal share in turn.
+    /// `clipsLabel` is for the tide cell, whose "TIDE AT 12:34 PM" label grows while
+    /// scrubbing: it is given no width, so it runs on past the cell instead of widening it
+    /// and nudging the readings beside it.
     @ViewBuilder
-    private func cell<Value: View>(_ label: String, centered: Bool = false,
+    private func cell<Value: View>(_ label: String, clipsLabel: Bool = false,
                                    @ViewBuilder value: () -> Value) -> some View {
-        VStack(alignment: centered ? .center : .leading, spacing: 3) {
-            // Zero width, so a long "TIDE AT 12:34 PM" runs on past its cell instead of
-            // truncating, without nudging anything beside it.
-            MicroLabel(text: label, tracking: 1.22)
-                .fixedSize()
-                .frame(width: 0, alignment: centered ? .center : .leading)
+        VStack(alignment: .leading, spacing: 3) {
+            if clipsLabel {
+                MicroLabel(text: label, size: 6.8, tracking: 1.1)
+                    .fixedSize()
+                    .frame(width: 0, alignment: .leading)
+            } else {
+                MicroLabel(text: label, size: 6.8, tracking: 1.1)
+            }
             HStack(alignment: .lastTextBaseline, spacing: 0) { value() }
         }
-        .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
     }
 
     private func written(_ text: String) -> some View {
@@ -89,19 +97,35 @@ struct NowStrip: View {
     /// Raised off the baseline — at this small a size the glyph's own ink sits right down
     /// against it, which reads as a stray mark rather than the usual floating degree sign.
     private func degree() -> some View {
-        Text("°").font(Theme.display(figure * 0.5)).foregroundStyle(Theme.mute)
-            .baselineOffset(6)
+        Text("°").font(Theme.display(figure * 0.6)).foregroundStyle(Theme.mute)
+            .baselineOffset(5)
     }
 
     /// A fixed leading inset rather than a space baked into the string — a space glyph's
     /// width rides on the handwriting font's per-character tracking just like any other
     /// character, so "FT" and "KT" would drift apart under it instead of matching.
     private func unit(_ text: String) -> some View {
-        Text(text).font(Theme.micro(9)).tracking(0.45).foregroundStyle(Theme.mute)
+        Text(text).font(Theme.micro(7)).tracking(0.42).foregroundStyle(Theme.mute)
             .padding(.leading, 2)
     }
 
     private static func oneDecimal(_ value: Double) -> String {
         String(format: "%.1f", value)
+    }
+}
+
+/// Four L-shaped corners, 9pt to an arm, standing in for the box they imply.
+private struct CropMarks: Shape {
+    func path(in rect: CGRect) -> Path {
+        let arm: CGFloat = 9
+        var path = Path()
+        for (x, dx) in [(rect.minX, arm), (rect.maxX, -arm)] {
+            for (y, dy) in [(rect.minY, arm), (rect.maxY, -arm)] {
+                path.move(to: CGPoint(x: x + dx, y: y))
+                path.addLine(to: CGPoint(x: x, y: y))
+                path.addLine(to: CGPoint(x: x, y: y + dy))
+            }
+        }
+        return path
     }
 }

@@ -44,8 +44,9 @@ struct Masthead: View {
     }()
 }
 
-/// The rule-and-label pair that heads each figure. Carries its own top margin so the
-/// figure block below can be sized as one piece.
+/// The label pair that heads each figure, with no rule over it: the air above is the
+/// only separation from the swim windows. Carries its own top margin so the figure block
+/// below can be sized as one piece.
 struct FigureCaption: View {
     let left: String
     let right: String
@@ -54,7 +55,8 @@ struct FigureCaption: View {
     /// Stands in for `right` when the corner needs to be tappable.
     var trailing: AnyView?
 
-    static let height: CGFloat = 25 + Theme.ruleGap
+    /// The label sits on the bottom edge, so this is also its distance from the section above.
+    static let height: CGFloat = 30
 
     var body: some View {
         HStack {
@@ -63,11 +65,6 @@ struct FigureCaption: View {
             if let trailing { trailing } else { MicroLabel(text: right, tracking: 1.29) }
         }
         .padding(.horizontal, Theme.margin)
-        .padding(.top, Theme.ruleGap)
-        .overlay(alignment: .top) {
-            Rectangle().fill(Theme.hair).frame(height: 1)
-        }
-        .padding(.top, 16)
         .frame(height: Self.height, alignment: .bottom)
     }
 }

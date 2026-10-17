@@ -9,15 +9,15 @@ struct RouteRows: View {
     static var height: CGFloat { 3 * rowHeight + topGap }
 
     private static let rowHeight: CGFloat = 24
-    /// A row already sets its caps 6pt under its top, so this makes the rule-to-COVE
-    /// gap `ruleGap`, like every other section break.
-    private static let topGap: CGFloat = Theme.ruleGap - 6
+    /// A row already sets its caps 6pt under its top; with the gap above the rows this
+    /// puts COVE about 22pt under the readings' crop marks.
+    private static let topGap: CGFloat = 8
 
     var body: some View {
         VStack(spacing: 0) {
             ForEach(routes, id: \.title) { route in
                 HStack(alignment: .lastTextBaseline, spacing: 9) {
-                    MicroLabel(text: route.title.uppercased(), tracking: 1.29,
+                    MicroLabel(text: route.title.uppercased(), size: 7, tracking: 1.12,
                                color: route.isFavorable ? Theme.ink : Theme.mute)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     HandwritingText(text: route.condition, size: Theme.hand(8.2),
@@ -28,8 +28,8 @@ struct RouteRows: View {
                     // `isFavorable` is the one route the app would send you on; the cove
                     // reads CALM instead and is just as swimmable.
                     Text(route.isFavorable || route.verdict == "CALM" ? "GO" : "HOLD")
-                        .font(Theme.micro(8.2).weight(route.isFavorable ? .semibold : .regular))
-                        .tracking(1.15)
+                        .font(Theme.micro(7.4).weight(route.isFavorable ? .semibold : .regular))
+                        .tracking(1.04)
                         .foregroundStyle(route.isFavorable ? Theme.spot : Theme.mute)
                 }
                 .lineLimit(1)
@@ -38,7 +38,6 @@ struct RouteRows: View {
             }
         }
         .padding(.top, Self.topGap)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.hair).frame(height: 1) }
         .padding(.horizontal, Theme.margin)
     }
 }
