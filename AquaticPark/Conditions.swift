@@ -238,7 +238,7 @@ enum Conditions {
             title: coveName,
             sublabel: calm ? "SHELTERED ALL DAY" : "WIND \(Int(hour.windSpeed)) MPH",
             verdict: picked ? "GO" : (calm ? "CALM" : hour.windSpeed < chopWind ? "CHOP" : "WINDY"),
-            condition: calm ? "sheltered" : "wind \(Int(hour.windSpeed))",
+            condition: calm ? "sheltered" : "wind \(Int(hour.windSpeed)) mph",
             isFavorable: picked
         )
     }

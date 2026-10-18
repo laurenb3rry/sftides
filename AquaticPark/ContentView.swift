@@ -135,7 +135,7 @@ struct ContentView: View {
                             day = dayOffset(of: time)
                             show(table: false)
                         }
-                        .padding(.top, 18)
+                        .padding(.top, captionGap)
                         .transition(.move(edge: .top))
                     } else {
                         graph(space: space)

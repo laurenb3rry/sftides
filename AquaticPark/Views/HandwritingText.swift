@@ -19,6 +19,10 @@ struct HandwritingText: View {
     var body: some View {
         Text(attributedText)
             .tracking(tracking ?? -size * 0.055)
+            // One line always: in a squeezed row the serif period is a break opportunity,
+            // and "3.8" would otherwise wrap after the point.
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, size * 0.12)
             .padding(.vertical, size * 0.08)
     }

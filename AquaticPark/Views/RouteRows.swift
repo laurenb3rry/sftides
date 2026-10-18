@@ -15,7 +15,7 @@ struct RouteRows: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(routes, id: \.title) { route in
+            ForEach(Array(routes.enumerated()), id: \.element.title) { index, route in
                 HStack(alignment: .lastTextBaseline, spacing: 9) {
                     MicroLabel(text: route.title.uppercased(), size: 7, tracking: 1.12,
                                color: route.isFavorable ? Theme.ink : Theme.mute)
@@ -35,6 +35,9 @@ struct RouteRows: View {
                 .lineLimit(1)
                 .padding(.vertical, 4)
                 .frame(height: Self.rowHeight)
+                // Pulls the outer rows 6pt toward the middle one (24pt pitch becomes 18).
+                // An offset, so the block's height and the figure above are unchanged.
+                .offset(y: CGFloat(1 - index) * 6)
             }
         }
         .padding(.top, Self.topGap)

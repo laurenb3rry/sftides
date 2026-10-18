@@ -43,7 +43,7 @@ struct TideTable: View {
     }
 
     private static let rowHeight: CGFloat = 32
-    private static let headerHeight: CGFloat = 31
+    private static let headerHeight: CGFloat = 22
 
     private var events: [Event] {
         // The same four days the chart and the window grid cover.
@@ -69,7 +69,7 @@ struct TideTable: View {
             .font(Theme.micro(9))
             .tracking(0.81)
             .foregroundStyle(Theme.mute)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .center)
             .padding(.horizontal, 22)
             .frame(height: Self.headerHeight, alignment: .bottom)
             .padding(.bottom, 6)
