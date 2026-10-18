@@ -19,14 +19,24 @@ enum API {
 
     /// 9414290's water temperature sensor is offline (mdapi reports `status: 0`),
     /// so this reads Richmond — the nearest in-bay station with a live sensor and
-    /// 99.9% uptime over the last 30 days.
-    /// ponytail: in-bay proxy 8.4 mi away. Aquatic Park pulls two ways against it —
-    /// colder ocean inflow at the Gate, warmer sheltered cove behind Municipal Pier.
-    /// Tune `waterTempOffset` once there are enough real swim readings to calibrate.
+    /// 99.9% uptime over the last 30 days. Richmond alone runs warm at Aquatic Park,
+    /// which sits between the sheltered bay and the colder ocean the flood pushes in.
     static let waterTempStation = "9414863"
 
-    /// Degrees F added to the station reading. Zero until calibrated.
-    static let waterTempOffset = 0.0
+    /// NDBC's SF Bar buoy, offshore of the Gate.
+    static let buoyStation = "46237"
+
+    /// Weight on the buoy in the blend `w * buoy + (1 - w) * richmond`. Fitted to one
+    /// swim (61°F on a day the buoy read 60.6 and Richmond 63.7).
+    /// ponytail: one data point. Refit, or vary it with the Gate current, once there
+    /// are more logged swims.
+    static let buoyWeight = 0.87
+
+    /// Degrees F added to Richmond alone when the buoy is offline or stale.
+    static let richmondOffset = -2.5
+
+    /// A buoy observation older than this counts as offline.
+    private static let buoyMaxAge: TimeInterval = 3 * 3600
     static let latitude = 37.8077
     static let longitude = -122.4230
 
@@ -69,11 +79,51 @@ enum API {
         guard let latest = rows.last else {
             throw APIError.noaa("No water temperature reported")
         }
-        let readings = try rows.map { try number($0.v) + waterTempOffset }
-        return WaterTempReading(time: try noaaDate(latest.t),
-                                temperature: try number(latest.v) + waterTempOffset,
-                                low: readings.min(), high: readings.max())
+        let readings = try rows.map { try number($0.v) }
+        let richmond = try number(latest.v)
+        let buoy = await buoyTemperature()
+        let temperature = buoy.map { buoyWeight * $0 + (1 - buoyWeight) * richmond }
+            ?? richmond + richmondOffset
+        // Richmond's day range moves by the same correction as its latest reading.
+        let shift = temperature - richmond
+        return WaterTempReading(time: try noaaDate(latest.t), temperature: temperature,
+                                low: readings.min().map { $0 + shift },
+                                high: readings.max().map { $0 + shift },
+                                estimated: buoy == nil, richmond: richmond, buoy: buoy)
     }
+
+    /// Latest buoy water temperature, or nil when the buoy is unreachable, reports no
+    /// water temperature, or its observation is stale. NDBC serves a plain-text page
+    /// whose degree sign is not UTF-8, so it is decoded leniently.
+    private static func buoyTemperature() async -> Double? {
+        guard let url = URL(string: "https://www.ndbc.noaa.gov/data/latest_obs/\(buoyStation).txt"),
+              let (data, _) = try? await URLSession.shared.data(from: url) else { return nil }
+        let text = String(decoding: data, as: UTF8.self)
+        guard let temp = capture(#"Water Temp: (-?\d+(?:\.\d+)?)"#, in: text),
+              let value = Double(temp[0]),
+              let stamp = capture(#"(\d{4}) GMT (\d{2}/\d{2}/\d{2})"#, in: text),
+              let observed = buoyFormatter.date(from: "\(stamp[0]) \(stamp[1])"),
+              Date().timeIntervalSince(observed) < buoyMaxAge else { return nil }
+        return value
+    }
+
+    /// The capture groups of the first match, or nil when there is none.
+    private static func capture(_ pattern: String, in text: String) -> [String]? {
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text))
+        else { return nil }
+        return (1..<match.numberOfRanges).compactMap {
+            Range(match.range(at: $0), in: text).map { String(text[$0]) }
+        }
+    }
+
+    private static let buoyFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "GMT")
+        formatter.dateFormat = "HHmm MM/dd/yy"
+        return formatter
+    }()
 
     // MARK: - Currents
 

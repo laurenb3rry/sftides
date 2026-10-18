@@ -11,6 +11,8 @@ struct NowStrip: View {
     let height: Double?
     let rising: Bool?
     let water: Double?
+    /// Richmond-only fallback: a `~` is hung off the left of the number.
+    var waterEstimated: Bool = false
     let weather: WeatherHour?
     /// Signed knots from `Conditions.velocity` — only the magnitude is shown.
     let knots: Double?
@@ -52,6 +54,13 @@ struct NowStrip: View {
             Spacer(minLength: 8)
             cell("WATER") {
                 written(water.map(Self.oneDecimal) ?? "—")
+                    // An overlay with its trailing edge on the number's leading edge, so
+                    // the `~` takes no layout space and nothing beside it moves.
+                    .overlay(alignment: .leading) {
+                        if waterEstimated {
+                            written("~").alignmentGuide(.leading) { $0[.trailing] }
+                        }
+                    }
                 degree()
             }
             Spacer(minLength: 8)

@@ -28,6 +28,13 @@ struct WaterTempReading: Codable {
     /// before they were fetched still decodes.
     var low: Double?
     var high: Double?
+    /// True when the buoy was unavailable and this is Richmond with a fixed correction.
+    /// Optional so a cache written before it existed still decodes (as not estimated).
+    var estimated: Bool?
+    /// The two sensors behind `temperature`, kept so the figure can be moved with the tide
+    /// (`Conditions.waterTemperature`). Optional for the same cache reason.
+    var richmond: Double?
+    var buoy: Double?
 
     var range: (low: Double, high: Double)? {
         guard let low, let high else { return nil }

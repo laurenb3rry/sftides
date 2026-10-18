@@ -11,11 +11,11 @@ struct TideFigure: View {
     /// Every west or east swim window in range. Under them the halftone dots give way to
     /// arrows, pointing the way the route goes.
     let swims: [(range: ClosedRange<Date>, east: Bool)]
-    /// The whole range on offer. A day of it is shown at a time; pinching narrows that
-    /// and dragging the axis moves it, across midnight into the next day.
+    /// The whole range on offer. A day of it is shown at a time, 6 AM to 8 PM; pinching
+    /// narrows that and dragging the axis moves it, but never past those edges.
     let fullWindow: (start: Date, end: Date)
-    /// The day on show, as an offset from the start of `fullWindow`. Follows the axis
-    /// as it is dragged; setting it from outside snaps the view to that whole day.
+    /// The day on show, as an offset from the start of `fullWindow`. Set from outside to
+    /// snap the view to that whole day.
     @Binding var day: Int
     /// Where the dot and the vertical tick are drawn — real "now" until the figure is
     /// scrubbed, then wherever the finger last was.
@@ -50,18 +50,28 @@ struct TideFigure: View {
     @State private var shifting = false
     @State private var panBase: Date?
 
-    private let daySpan: TimeInterval = 24 * 3600
+    /// The hours a day is shown for: no one swims before 6 AM or after 8 PM.
+    private let dayFirstHour = 6
+    private let daySpan: TimeInterval = 14 * 3600
 
-    private func startOfDay(_ offset: Int) -> Date {
-        Conditions.calendar.date(byAdding: .day, value: offset, to: fullWindow.start)!
+    private func dayStart(_ offset: Int) -> Date {
+        let midnight = Conditions.calendar.date(byAdding: .day, value: offset, to: fullWindow.start)!
+        return midnight.addingTimeInterval(TimeInterval(dayFirstHour) * 3600)
+    }
+
+    /// Keeps a window of `span` inside the day on show, 6 AM to 8 PM: a hard edge, so
+    /// neither pinching nor dragging the axis can show the night or the next day. Other
+    /// days come from the stepper.
+    private func clamped(_ start: Date, span: TimeInterval) -> Date {
+        let first = dayStart(day)
+        return min(max(start, first), first.addingTimeInterval(daySpan - span))
     }
 
     /// What is on screen: a day, or the pinched-in slice of one. Everything below reads
     /// this, so scrubbing and drawing stay in step with the zoom.
     private var window: (start: Date, end: Date) {
         let span = zoomSpan ?? daySpan
-        let start = min(max(zoomStart ?? startOfDay(day), fullWindow.start),
-                        fullWindow.end.addingTimeInterval(-span))
+        let start = clamped(zoomStart ?? dayStart(day), span: span)
         return (start, start.addingTimeInterval(span))
     }
 
@@ -149,9 +159,8 @@ struct TideFigure: View {
         let span = zoomSpan ?? daySpan
         if panBase == nil { panBase = window.start }
         guard let base = panBase else { return }
-        let latest = fullWindow.end.addingTimeInterval(-span)
-        let start = base.addingTimeInterval(-span * Double(translation / width))
-        zoomStart = min(max(start, fullWindow.start), latest)
+        zoomStart = clamped(base.addingTimeInterval(-span * Double(translation / width)),
+                            span: span)
         syncDay()
     }
 
@@ -196,16 +205,11 @@ struct TideFigure: View {
 
             let ticks = axisTicks()
             for (time, name) in ticks {
-                // Dragged off a whole day, a midnight on the axis says which day it begins.
-                let wholeDay = window.start == Conditions.calendar.startOfDay(for: window.start)
-                    && window.end.timeIntervalSince(window.start) >= daySpan
-                let dayed = !wholeDay && time == Conditions.calendar.startOfDay(for: time)
-                let label = dayed ? Self.weekday.string(from: time).uppercased() + " " + name : name
                 let tick = x(time, width)
                 context.stroke(Path { $0.move(to: CGPoint(x: tick, y: baseline))
                                       $0.addLine(to: CGPoint(x: tick, y: baseline + 4)) },
                                with: .color(Theme.ink), lineWidth: 1)
-                let text = context.resolve(Text(label).font(Theme.micro(7)).tracking(1.4)
+                let text = context.resolve(Text(name).font(Theme.micro(7)).tracking(1.4)
                     .foregroundStyle(Theme.mute))
                 // Centred under its tick; an end label is pulled back rather than run off
                 // the screen.
@@ -330,38 +334,27 @@ struct TideFigure: View {
         return path
     }
 
-    /// Six-hour marks over a day, midnights over the whole range — the same axis cannot
-    /// carry both, and twenty labels at 7pt is a smear. Pinched in, the marks close up
-    /// to three hours and then to every hour.
+    /// Five marks over a day, 3½ hours apart from 6 AM to 8 PM. Pinched in, the marks
+    /// close up to every hour.
     private func axisTicks() -> [(Date, String)] {
         let span = window.end.timeIntervalSince(window.start)
-        let step: TimeInterval = span > 36 * 3600 ? 24 * 3600
-            : span > 14 * 3600 ? 6 * 3600 : span > 6 * 3600 ? 3 * 3600 : 3600
+        let step: TimeInterval = span > 6 * 3600 ? 3.5 * 3600 : 3600
         var ticks: [(Date, String)] = []
         var time = Conditions.calendar.startOfDay(for: window.start)
+        // The 3½-hour marks are counted from 6 AM, which is not a multiple of the step.
+        if span > 6 * 3600 { time.addTimeInterval(TimeInterval(dayFirstHour) * 3600 - 3 * step) }
         while time <= window.end {
             defer { time.addTimeInterval(step) }
             guard time >= window.start else { continue }
-            if step == 24 * 3600 {
-                ticks.append((time, Self.weekday.string(from: time).uppercased()))
-            } else {
-                ticks.append((time, Self.hourName(Conditions.calendar.component(.hour, from: time))))
-            }
+            ticks.append((time, Self.hourName(Conditions.calendar.component(.hour, from: time),
+                                              Conditions.calendar.component(.minute, from: time))))
         }
         return ticks
     }
 
-    private static func hourName(_ hour: Int) -> String {
-        switch hour {
-        default: "\(hour % 12 == 0 ? 12 : hour % 12)\(hour < 12 ? "AM" : "PM")"
-        }
+    private static func hourName(_ hour: Int, _ minute: Int) -> String {
+        let clock = minute == 0 ? "\(hour % 12 == 0 ? 12 : hour % 12)"
+            : "\(hour % 12 == 0 ? 12 : hour % 12):\(String(format: "%02d", minute))"
+        return clock + (hour < 12 ? "AM" : "PM")
     }
-
-    private static let weekday: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = API.zone
-        formatter.dateFormat = "EEE"
-        return formatter
-    }()
 }

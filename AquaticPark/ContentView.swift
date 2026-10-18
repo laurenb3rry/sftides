@@ -160,7 +160,9 @@ struct ContentView: View {
                 .padding(.bottom, sectionGap)
             NowStrip(height: Conditions.height(at: marker ?? now, in: curve),
                      rising: Conditions.isRising(at: marker ?? now, in: curve),
-                     water: waterTemp?.temperature,
+                     water: Conditions.waterTemperature(at: marker ?? now, reading: waterTemp,
+                                                        samples: samples),
+                     waterEstimated: waterTemp?.estimated ?? false,
                      weather: Conditions.weather(at: marker ?? now, in: forecast),
                      knots: Conditions.velocity(at: marker ?? now, in: samples),
                      label: marker.map { "TIDE AT " + Conditions.handClock($0).uppercased() }
@@ -328,8 +330,8 @@ struct ContentView: View {
             curve = tides.value.curve
             extremes = tides.value.extremes
         }
-        if let entry = cached.currents { events = entry.value }
-        if let entry = cached.currentsFine { samples = entry.value }
+        if let entry = cached.currents { events = Conditions.atOpening(entry.value) }
+        if let entry = cached.currentsFine { samples = Conditions.atOpening(entry.value) }
         if let entry = cached.weather { forecast = entry.value }
         if let entry = cached.waterTemp { waterTemp = entry.value }
         derive()
@@ -353,13 +355,13 @@ struct ContentView: View {
             failed = true
         }
         if let fresh = try? await eventsTask {
-            events = fresh
+            events = Conditions.atOpening(fresh)
             await Cache.shared.update { $0.currents = Entry(fresh) }
         } else {
             failed = true
         }
         if let fresh = try? await samplesTask {
-            samples = fresh
+            samples = Conditions.atOpening(fresh)
             await Cache.shared.update { $0.currentsFine = Entry(fresh) }
         } else {
             failed = true
