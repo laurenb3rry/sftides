@@ -262,11 +262,19 @@ struct ContentView: View {
     }
 
     /// Moves the figure to a day and drops any grid selection, which belongs to the day
-    /// it was made on.
+    /// it was made on. The marker comes along at the same time of day, held inside the
+    /// hours the figure shows (and back to live on today), so the strip, the windows and the routes below keep reading
+    /// the line on the screen.
     private func select(day target: Int) {
+        let calendar = Conditions.calendar
+        let moved = calendar.date(byAdding: .day, value: target - day, to: marker ?? now) ?? now
+        let midnight = calendar.startOfDay(for: moved)
+        let first = midnight.addingTimeInterval(Double(Conditions.firstLight) * 3600)
+        let last = midnight.addingTimeInterval(Double(Conditions.lastLight) * 3600)
         day = target
         selectedCell = nil
-        marker = nil
+        // Today reads live again rather than a carried time.
+        marker = target == 0 ? nil : min(max(moved, first), last)
     }
 
     private func date(offset: Int) -> Date {
