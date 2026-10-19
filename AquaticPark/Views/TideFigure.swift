@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// The tide curve is the shape of the day, with the Gate's slack windows standing behind
-/// it as grey bars. Drawn as a figure rather than a chart: no boxed plot area, no legend,
+/// The tide curve is the shape of the day, with each of the Gate's slacks marked on it by
+/// a ring and a dashed line rising to its time. Drawn as a figure rather than a chart: no boxed plot area, no legend,
 /// a halftone fill instead of a gradient.
 struct TideFigure: View {
     let curve: [TideSample]
     let samples: [CurrentSample]
-    /// Shaded as plain bars; the table carries their times.
+    /// Only the moment of each is drawn; the table carries the windows.
     let slacks: [SlackWindow]
     /// Every west or east swim window in range. Under them the halftone dots give way to
     /// arrows, pointing the way the route goes.
@@ -27,8 +27,8 @@ struct TideFigure: View {
     /// Vertical layout, measured up from the bottom of the plot: room for the axis labels,
     /// and the curve takes everything above.
     private let axisHeight: CGFloat = 18
-    /// Where the slack bars and the marker start. The curve's peak sits `peak` down,
-    /// so there is a little headroom over it inside the bars.
+    /// Where the slack lines and the marker start. The curve's peak sits `peak` down,
+    /// so there is a little headroom over it.
     private let top: CGFloat = 14
     private let peak: CGFloat = 28
     /// Under the 26pt page margin, so the widest label stays on screen.
@@ -176,15 +176,6 @@ struct TideFigure: View {
             context.translateBy(x: overflow, y: 0)
             let (baseline, amplitude) = rows(size.height)
 
-            // Behind everything, so the curve and its dots read over them.
-            for slack in slacks {
-                let from = max(x(slack.start, width), 0)
-                let to = min(x(slack.end, width), width)
-                guard to > from else { continue }
-                context.fill(Path(CGRect(x: from, y: top, width: to - from, height: baseline - top)),
-                             with: .color(Theme.ink.opacity(0.09)))
-            }
-
             for step in 1..<3 {
                 let y = peak + (baseline - peak) * CGFloat(step) / 3
                 context.stroke(Path { $0.move(to: CGPoint(x: 0, y: y))
@@ -202,6 +193,30 @@ struct TideFigure: View {
             context.stroke(Path { $0.move(to: CGPoint(x: 0, y: baseline))
                                   $0.addLine(to: CGPoint(x: width, y: baseline)) },
                            with: .color(shifting ? Theme.spot : Theme.ink), lineWidth: 1.2)
+
+            // A slack is an instant: a ring on the curve (the filled dot stays "now") and a
+            // dashed line from it up to the time. Only upward; below the curve is the water.
+            for slack in slacks {
+                let mark = x(slack.time, width)
+                guard mark >= 0, mark <= width,
+                      let height = Conditions.height(at: slack.time, in: curve) else { continue }
+                let y = baseline - CGFloat(normalise(height)) * amplitude
+                context.stroke(Path { $0.move(to: CGPoint(x: mark, y: y - 3.2))
+                                      $0.addLine(to: CGPoint(x: mark, y: top)) },
+                               with: .color(Theme.spot),
+                               style: StrokeStyle(lineWidth: 0.9, dash: [2, 2.2]))
+                let ring = CGRect(x: mark - 3.2, y: y - 3.2, width: 6.4, height: 6.4)
+                context.fill(Path(ellipseIn: ring), with: .color(Theme.paper))
+                context.stroke(Path(ellipseIn: ring), with: .color(Theme.ink), lineWidth: 1.1)
+                let text = context.resolve(
+                    Text("SLACK " + Self.hourName(Conditions.calendar.component(.hour, from: slack.time),
+                                                  Conditions.calendar.component(.minute, from: slack.time)))
+                        .font(Theme.micro(6)).tracking(1.2).foregroundStyle(Theme.mute))
+                // Pulled in rather than run off the screen, as the axis labels are.
+                let half = text.measure(in: size).width / 2
+                let centre = min(max(mark, half - overflow + 2), width + overflow - half - 2)
+                context.draw(text, at: CGPoint(x: centre, y: top - 4), anchor: .bottom)
+            }
 
             let ticks = axisTicks()
             for (time, name) in ticks {
