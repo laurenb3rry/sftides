@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		1BF73F8D82604B70BA96427F /* AquaticPark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AquaticPark.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1BF73F8D82604B70BA96427F /* GoldenGateTides.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GoldenGateTides.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		254102FCB19B4D44B7BADEBC /* AquaticPark */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = AquaticPark; sourceTree = "<group>"; };
+		254102FCB19B4D44B7BADEBC /* GoldenGateTides */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = GoldenGateTides; sourceTree = "<group>"; };
 		A61738B6749A410E98CF8DE1 /* Resources */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Resources; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -29,7 +29,7 @@
 		6B5DBDDBF27B40DDA461E9CD /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1BF73F8D82604B70BA96427F /* AquaticPark.app */,
+				1BF73F8D82604B70BA96427F /* GoldenGateTides.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -37,7 +37,7 @@
 		9D10BC2F2F544F0EA1EC4545 = {
 			isa = PBXGroup;
 			children = (
-				254102FCB19B4D44B7BADEBC /* AquaticPark */,
+				254102FCB19B4D44B7BADEBC /* GoldenGateTides */,
 				A61738B6749A410E98CF8DE1 /* Resources */,
 				6B5DBDDBF27B40DDA461E9CD /* Products */,
 			);
@@ -46,9 +46,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4B27BCDD7928499EA74370A3 /* AquaticPark */ = {
+		4B27BCDD7928499EA74370A3 /* GoldenGateTides */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 55D11F2143D0436CACBC8061 /* Build configuration list for PBXNativeTarget "AquaticPark" */;
+			buildConfigurationList = 55D11F2143D0436CACBC8061 /* Build configuration list for PBXNativeTarget "GoldenGateTides" */;
 			buildPhases = (
 				28233FE315B74168947E64D0 /* Frameworks */,
 				8455DA170F5044FAA53A89A3 /* Resources */,
@@ -59,12 +59,12 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				254102FCB19B4D44B7BADEBC /* AquaticPark */,
+				254102FCB19B4D44B7BADEBC /* GoldenGateTides */,
 				A61738B6749A410E98CF8DE1 /* Resources */,
 			);
-			name = AquaticPark;
-			productName = AquaticPark;
-			productReference = 1BF73F8D82604B70BA96427F /* AquaticPark.app */;
+			name = GoldenGateTides;
+			productName = GoldenGateTides;
+			productReference = 1BF73F8D82604B70BA96427F /* GoldenGateTides.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -82,7 +82,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 9A4A49E78E694C40AD950DD7 /* Build configuration list for PBXProject "AquaticPark" */;
+			buildConfigurationList = 9A4A49E78E694C40AD950DD7 /* Build configuration list for PBXProject "GoldenGateTides" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -95,7 +95,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4B27BCDD7928499EA74370A3 /* AquaticPark */,
+				4B27BCDD7928499EA74370A3 /* GoldenGateTides */,
 			);
 		};
 /* End PBXProject section */
@@ -188,10 +188,12 @@
 		73B6DA39EE8545808445B8F3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = TideIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DP3KBQVZ4X;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GGTides;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -201,7 +203,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.laurenberry.AquaticPark;
+				PRODUCT_BUNDLE_IDENTIFIER = com.laurenberry.GoldenGateTides;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -211,10 +213,12 @@
 		BA48B156F5C4449488CB87FE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = TideIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = DP3KBQVZ4X;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = GGTides;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -224,7 +228,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.laurenberry.AquaticPark;
+				PRODUCT_BUNDLE_IDENTIFIER = com.laurenberry.GoldenGateTides;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -291,7 +295,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		55D11F2143D0436CACBC8061 /* Build configuration list for PBXNativeTarget "AquaticPark" */ = {
+		55D11F2143D0436CACBC8061 /* Build configuration list for PBXNativeTarget "GoldenGateTides" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				73B6DA39EE8545808445B8F3 /* Debug */,
@@ -300,7 +304,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9A4A49E78E694C40AD950DD7 /* Build configuration list for PBXProject "AquaticPark" */ = {
+		9A4A49E78E694C40AD950DD7 /* Build configuration list for PBXProject "GoldenGateTides" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				08E2F8618E5B4F0DAE142BA0 /* Debug */,

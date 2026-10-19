@@ -41,7 +41,7 @@ actor Cache {
     private let url: URL = {
         let directory = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("AquaticPark", isDirectory: true)
+            .appendingPathComponent("GoldenGateTides", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory.appendingPathComponent("cache.json")
     }()

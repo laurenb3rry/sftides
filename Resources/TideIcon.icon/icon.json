@@ -1,0 +1,32 @@
+{
+  "fill": {
+    "solid": "srgb:0.957,0.945,0.910,1.000"
+  },
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "AppIcon.png",
+          "name": "Exact E artwork",
+          "position": {
+            "scale": 1,
+            "translation-in-points": [0, 0]
+          }
+        }
+      ],
+      "specular": false,
+      "shadow": {
+        "kind": "none",
+        "opacity": 0
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      },
+      "glass": false
+    }
+  ],
+  "supported-platforms": {
+    "squares": ["iOS"]
+  }
+}

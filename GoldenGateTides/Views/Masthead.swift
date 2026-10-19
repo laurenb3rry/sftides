@@ -23,7 +23,7 @@ struct Masthead: View {
 
     var body: some View {
         HStack(alignment: .lastTextBaseline) {
-            MicroLabel(text: "AQUATIC PARK", size: 8.6, tracking: 2.24, color: Theme.ink)
+            MicroLabel(text: "GOLDEN GATE TIDES", size: 8.6, tracking: 2.24, color: Theme.ink)
             Spacer()
             MicroLabel(text: Self.stamp.string(from: now).uppercased(),
                        size: 8.6, tracking: 1.72)

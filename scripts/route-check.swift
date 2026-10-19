@@ -2,8 +2,8 @@ import Foundation
 
 // Exactly one route must be favourable at every minute of a synthetic tidal day, and
 // it must be the one you can swim home in. Run with:
-//   swiftc -o /tmp/route-check AquaticPark/Models.swift AquaticPark/Conditions.swift \
-//       AquaticPark/API.swift scripts/route-check.swift && /tmp/route-check
+//   swiftc -o /tmp/route-check GoldenGateTides/Models.swift GoldenGateTides/Conditions.swift \
+//       GoldenGateTides/API.swift scripts/route-check.swift && /tmp/route-check
 
 @main
 struct RouteCheck {

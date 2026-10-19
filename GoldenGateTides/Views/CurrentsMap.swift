@@ -207,7 +207,7 @@ private enum Bay {
     private static let hydeStPier = [(-122.4212, 37.8068), (-122.4214, 37.8098)]
     private static let goldenGate = [(-122.4775, 37.8105), (-122.479, 37.8255)]
     private static let bayBridge = [[(-122.3885, 37.7895), (-122.372, 37.8075)],
-                                    [(-122.359, 37.8115), (-122.315, 37.8225)]]
+                                    [(-122.3585, 37.8085), (-122.315, 37.8225)]]
     private static let aquaticPark = (-122.4228, 37.8082)
 
     private enum Anchor { case leading, centre, trailing }

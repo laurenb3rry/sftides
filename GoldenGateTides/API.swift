@@ -189,7 +189,7 @@ enum API {
             string: "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter")!
         let shared = [
             "station": station, "time_zone": "lst_ldt", "units": "english",
-            "format": "json", "application": "AquaticParkSwim",
+            "format": "json", "application": "GoldenGateTidesSwim",
         ]
         components.queryItems = shared.merging(extra) { _, new in new }
             .map(URLQueryItem.init(name:value:))
