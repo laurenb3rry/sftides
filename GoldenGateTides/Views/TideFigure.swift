@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The tide curve is the shape of the day, with each of the Gate's slacks marked on it by
+/// The tide curve is the shape of the day, with each of the current's slacks marked on it by
 /// a ring and a dashed line rising to its time. Drawn as a figure rather than a chart: no boxed plot area, no legend,
 /// a halftone fill instead of a gradient.
 struct TideFigure: View {
@@ -8,8 +8,8 @@ struct TideFigure: View {
     let samples: [CurrentSample]
     /// Only the moment of each is drawn; the table carries the windows.
     let slacks: [SlackWindow]
-    /// Every west or east swim window in range. Under them the halftone dots give way to
-    /// arrows, pointing the way the route goes.
+    /// Every west or east swim window in range, from its first start to its last finish.
+    /// Under them the halftone dots give way to arrows, pointing the way the route goes.
     let swims: [(range: ClosedRange<Date>, east: Bool)]
     /// The whole range on offer. A day of it is shown at a time, 6 AM to 8 PM; pinching
     /// narrows that and dragging the axis moves it, but never past those edges.
@@ -317,7 +317,7 @@ struct TideFigure: View {
             for (index, row) in stride(from: CGFloat(3), to: height, by: 6).enumerated() {
                 for column in stride(from: CGFloat(3), to: width, by: 6) {
                     let under = focus.filter { $0.span.contains(column) }.map(\.east)
-                    let east = under.count == 2 ? index.isMultiple(of: 2) : under.first
+                    let east = Set(under).count == 2 ? index.isMultiple(of: 2) : under.first
                     guard let east else {
                         layer.fill(Path(ellipseIn: CGRect(x: column - 1.2, y: row - 1.2,
                                                           width: 2.4, height: 2.4)),

@@ -33,9 +33,15 @@ struct ContentView: View {
     /// Day offset × hour, each the better of the two exposed routes.
     @State private var grid: [[Double]] = []
 
-    /// Every west or east swim window in the fetched range, for the tide figure's dots.
-    /// Derived alongside `grid` for the same reason: each is a scan of the current samples.
-    @State private var swims: [(range: ClosedRange<Date>, east: Bool)] = []
+    /// Every west and east swim window in the fetched range, in start order. Derived
+    /// alongside `grid` for the same reason: each is a scan of the current samples.
+    @State private var windows: (west: [SwimWindow], east: [SwimWindow]) = ([], [])
+
+    /// The same windows as the tide figure draws them, first start to last finish.
+    private var swims: [(range: ClosedRange<Date>, east: Bool)] {
+        windows.west.map { ($0.start...Conditions.swimsEnd($0), false) }
+            + windows.east.map { ($0.start...Conditions.swimsEnd($0), true) }
+    }
 
     /// Breathing room between sections that would otherwise abut. Subtracted out of
     /// `figures`' flexible space wherever it falls inside the GeometryReader, so adding
@@ -61,12 +67,14 @@ struct ContentView: View {
     /// walks the headline through the window it's pointing at instead of leaving it
     /// pinned to the moment the data last refreshed.
     private var west: SwimWindow? {
-        Conditions.nextWindow(route: .west, samples: samples, events: events,
-                              forecast: forecast, after: marker ?? now)
+        Conditions.nextWindow(in: windows.west, after: marker ?? now)
     }
     private var east: SwimWindow? {
-        Conditions.nextWindow(route: .east, samples: samples, events: events,
-                              forecast: forecast, after: marker ?? now)
+        Conditions.nextWindow(in: windows.east, after: marker ?? now)
+    }
+    private var pair: WindowPair? {
+        Conditions.windowPair(route: .west, in: windows.west, at: marker ?? now)
+            ?? Conditions.windowPair(route: .east, in: windows.east, at: marker ?? now)
     }
 
     private var slacks: [SlackWindow] {
@@ -96,7 +104,7 @@ struct ContentView: View {
             CurrentsMap(knots: Conditions.velocity(at: marker ?? now, in: samples),
                         water: waterTemp?.range)
                 .containerRelativeFrame(.vertical) { length, _ in length * 0.26 }
-            SwimWindowPair(west: west, east: east)
+            SwimWindowPair(west: west, east: east, pair: pair, time: marker ?? now)
             figures
         }
         .padding(.top, 8)
@@ -338,8 +346,8 @@ struct ContentView: View {
             curve = tides.value.curve
             extremes = tides.value.extremes
         }
-        if let entry = cached.currents { events = Conditions.atOpening(entry.value) }
-        if let entry = cached.currentsFine { samples = Conditions.atOpening(entry.value) }
+        if let entry = cached.currents { events = entry.value }
+        if let entry = cached.currentsFine { samples = entry.value }
         if let entry = cached.weather { forecast = entry.value }
         if let entry = cached.waterTemp { waterTemp = entry.value }
         derive()
@@ -363,13 +371,13 @@ struct ContentView: View {
             failed = true
         }
         if let fresh = try? await eventsTask {
-            events = Conditions.atOpening(fresh)
+            events = fresh
             await Cache.shared.update { $0.currents = Entry(fresh) }
         } else {
             failed = true
         }
         if let fresh = try? await samplesTask {
-            samples = Conditions.atOpening(fresh)
+            samples = fresh
             await Cache.shared.update { $0.currentsFine = Entry(fresh) }
         } else {
             failed = true
@@ -397,15 +405,15 @@ struct ContentView: View {
     private func derive() {
         guard !samples.isEmpty else {
             grid = []
-            swims = []
+            windows = ([], [])
             return
         }
         let chart = Conditions.chartWindow(now: now)
-        swims = [Conditions.SwimRoute.west, .east].flatMap { route in
-            Conditions.swimWindows(route: route, samples: samples, events: events,
-                                   forecast: forecast, from: chart.start, through: chart.end)
-                .map { ($0.start...$0.end, route == .east) }
+        let scan = { (route: Conditions.SwimRoute) in
+            Conditions.swimWindows(route: route, samples: samples, forecast: forecast,
+                                   from: chart.start, through: chart.end)
         }
+        windows = (scan(.west), scan(.east))
         let midnight = Conditions.calendar.startOfDay(for: now)
         grid = (0..<4).map { day in
             (0..<24).map { hour in

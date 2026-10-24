@@ -4,8 +4,8 @@ enum Conditions {
 
     // TUNABLE — calibrate against real swims over a season. The wind numbers are set
     // off a year of hourly Open-Meteo at the cove: median 7, p90 13, p99 19 mph.
-    // The current numbers are Gate knots (SFB1203 bin 18 runs to about ±3.4), which
-    // read far higher than the water actually moving past Aquatic Park.
+    // The current numbers are North Point knots (SFB1205 bin 15 runs to about +2.9 flood,
+    // -3.3 ebb), which read higher than the water actually moving inside the cove.
     static let slackThreshold: Double = 0.5      // knots
     static let approachWindow: Double = 60       // minutes; "wait" advice appears within this
     static let calmWind: Double = 12             // mph; above this the cove stops reading CALM
@@ -15,14 +15,6 @@ enum Conditions {
     static let galeWind: Double = 25             // mph; nobody should be getting in
     static let outLeg: Double = 25               // minutes swum into slack water
     static let ridingSpeed: Double = 0.1      // knots; the home leg must run faster than this the right way
-    /// Minutes the Gate runs behind the opening of Aquatic Park: North Point, a mile east
-    /// of the cove, slacks 20–30 minutes before the Gate, so the opening at `t` is what
-    /// the Gate reads at `t + openingLead`. `atOpening` applies it once, as the samples
-    /// and events come in, so everything downstream (the graph, the readouts, the windows)
-    /// is on opening time.
-    /// ponytail: one fixed lag. It really varies with the tide's range; re-measure against
-    /// SFB1205 if the windows read early or late.
-    static let openingLead: Double = 25
     static let rainLookback: Double = 24         // hours back to look for a discharge-triggering rain
     /// Share of the buoy-vs-Richmond blend that moves with the current at the opening, per
     /// knot: a flood pulls the water temperature toward the ocean, an ebb toward the bay.
@@ -67,24 +59,12 @@ enum Conditions {
         return next > current
     }
 
-    // MARK: - Gate current
+    // MARK: - Current
 
     /// Interpolated between the 6-minute samples, the same way tide height is.
     static func velocity(at time: Date, in samples: [CurrentSample]) -> Double? {
         guard let (a, b, fraction) = bracket(samples, time, \.time) else { return nil }
         return a.velocity + (b.velocity - a.velocity) * fraction
-    }
-
-    /// The Gate's samples and events moved onto the opening's clock (see `openingLead`).
-    /// Apply to freshly fetched data and to cached data alike, once, where they enter.
-    static func atOpening(_ samples: [CurrentSample]) -> [CurrentSample] {
-        samples.map { CurrentSample(time: $0.time.addingTimeInterval(-openingLead * 60),
-                                    velocity: $0.velocity) }
-    }
-
-    static func atOpening(_ events: [CurrentEvent]) -> [CurrentEvent] {
-        events.map { CurrentEvent(time: $0.time.addingTimeInterval(-openingLead * 60),
-                                  velocity: $0.velocity, type: $0.type) }
     }
 
     // MARK: - Water temperature
@@ -183,7 +163,8 @@ enum Conditions {
     ///
     /// An ebb runs west past the opening and keeps building all the way to the Gate; a
     /// flood runs east toward the wharf. The pick is whichever route has a window open
-    /// right now (see `windowOpen`): swim out into slack, ride the new current home.
+    /// right now (see `windowOpen`): one leg in slack water, the other in whatever is
+    /// running either side of it.
     ///
     /// When neither is open the cove is the answer, and it nearly always is one:
     /// Municipal Pier keeps the current out of it, so only wind reaches in there.
@@ -211,10 +192,14 @@ enum Conditions {
             guard let now else { return unavailable(name) }
             if picked {
                 let slackNow = isSlack(now)
+                let slackOut = windowOpen(at: time, route: route, slackLeg: .out,
+                                          samples: samples, forecast: forecast)
                 return RouteVerdict(title: name,
-                                    sublabel: slackNow ? "SLACK NOW" : ride,
+                                    sublabel: slackNow ? "SLACK NOW"
+                                        : slackOut ? ride : "SLACK ON THE WAY BACK",
                                     verdict: "GO",
-                                    condition: slackNow ? "slack now" : withCurrent,
+                                    condition: slackNow ? "slack now"
+                                        : slackOut ? withCurrent : "slack back",
                                     isFavorable: true)
             }
             if rough, let hour {
@@ -335,8 +320,6 @@ enum Conditions {
     /// figure shows the same span.
     static let firstLight = 6
     static let lastLight = 20
-    /// A run of start times shorter than this is not a window worth walking down for.
-    static let minWindow: TimeInterval = 15 * 60
     /// How finely the window scan steps. A window is only the 20–40 minutes of start times
     /// that satisfy the slack-then-ride rule, so it needs a fine step to be seen at all;
     /// 5 minutes is still cheap enough for a five-day scan on every refresh.
@@ -359,46 +342,60 @@ enum Conditions {
         (abs(velocity) * 10).rounded() <= slackThreshold * 10
     }
 
-    /// Whether a swim of `route` starting at `time` works. The Dolphin Club rule is to do
-    /// the hard part first: the first `outLeg` minutes are swum into slack water, and the
-    /// current must be running the right way (flood for west, ebb for east) by
-    /// `ridingSpeed` at the turn, `outLeg` minutes in, to carry you home. There is no
-    /// ceiling on the ride home. Only the turn is checked, not the whole way back: the
-    /// current moves a tenth of a knot or so in the 25 minutes after it, so a ride that
-    /// starts at `ridingSpeed` can fade into slack by the end.
+    /// Which leg of a swim is the one in slack water.
+    enum SlackLeg { case out, back }
+
+    /// Whether a swim of `route` starting at `time` works: `outLeg` minutes out, the same
+    /// back, with one of the two legs in slack water.
     ///
-    /// Every 5 minutes of the out leg is checked against the current (on the opening's
-    /// clock, see `atOpening`), so a current that picks up mid-leg is caught. Rough wind
-    /// and advisories close a window; a missing forecast does not.
-    static func windowOpen(at time: Date, route: SwimRoute,
+    /// Slack out is the Dolphin Club rule, the hard part first: the current must also be
+    /// running the right way (flood for west, ebb for east) by `ridingSpeed` at the turn
+    /// to carry you home. There is no ceiling on the ride home.
+    ///
+    /// Slack back puts the slack on the home leg instead: you ride the dying current out
+    /// (ebb for west, flood for east) and swim home through the slack. The out leg is never
+    /// swum against the current, not even a slack-strength one — every check of it runs your
+    /// way — but has no ceiling; the caption says how hard it runs (see `window`).
+    ///
+    /// Every 5 minutes of the slack leg is checked, so a current that picks up mid-leg is
+    /// caught. Rough wind and advisories close a window; a missing forecast does not.
+    static func windowOpen(at time: Date, route: SwimRoute, slackLeg: SlackLeg,
                            samples: [CurrentSample], forecast: [WeatherHour]) -> Bool {
         guard advisory(at: time, in: forecast) == nil,
               let out = velocity(at: time, in: samples) else { return false }
         if let hour = weather(at: time, in: forecast), roughOutside(hour, current: out) {
             return false
         }
-        let direction: Double = route == .west ? 1 : -1
-        guard let turn = velocity(at: time.addingTimeInterval(outLeg * 60), in: samples),
-              direction * turn >= ridingSpeed else { return false }
-        return stride(from: 0.0, through: outLeg, by: 5).allSatisfy { minute in
-            velocity(at: time.addingTimeInterval(minute * 60), in: samples).map(isSlack) ?? false
+        let turn = time.addingTimeInterval(outLeg * 60)
+        guard slackAll(from: slackLeg == .out ? time : turn, samples: samples) else {
+            return false
+        }
+        // Positive for the current that carries you home: flood for west, ebb for east.
+        let home: Double = route == .west ? 1 : -1
+        guard slackLeg == .out else {
+            return stride(from: 0.0, through: outLeg, by: 5).allSatisfy { minute in
+                velocity(at: time.addingTimeInterval(minute * 60), in: samples)
+                    .map { home * $0 <= 0 } ?? false
+            }
+        }
+        return velocity(at: turn, in: samples).map { home * $0 >= ridingSpeed } ?? false
+    }
+
+    /// Slack at every 5-minute check of the `outLeg` minutes from `start`.
+    private static func slackAll(from start: Date, samples: [CurrentSample]) -> Bool {
+        stride(from: 0.0, through: outLeg, by: 5).allSatisfy { minute in
+            velocity(at: start.addingTimeInterval(minute * 60), in: samples).map(isSlack) ?? false
         }
     }
 
-    /// Whether `time` falls in a window the list would show: inside the swimming hours and
-    /// in a run of start times at least `minWindow` long. What the live route read uses,
-    /// so a route is never marked GO for a window the headline leaves out.
+    /// Whether `time` falls in a window the list would show: a good start, either leg in
+    /// slack, inside the swimming hours. What the live route read uses, so a route is never
+    /// marked GO for a window the headline leaves out.
     static func inWindow(at time: Date, route: SwimRoute,
                          samples: [CurrentSample], forecast: [WeatherHour]) -> Bool {
-        func open(_ time: Date) -> Bool {
-            isDaylight(time) && windowOpen(at: time, route: route, samples: samples,
-                                           forecast: forecast)
+        isDaylight(time) && [SlackLeg.out, .back].contains {
+            windowOpen(at: time, route: route, slackLeg: $0, samples: samples, forecast: forecast)
         }
-        guard open(time) else { return false }
-        var start = time, end = time
-        while open(start.addingTimeInterval(-scanStep)) { start.addTimeInterval(-scanStep) }
-        while open(end.addingTimeInterval(scanStep)) { end.addTimeInterval(scanStep) }
-        return end.timeIntervalSince(start) >= minWindow
     }
 
     /// 1 when either exposed route has a window starting at `time`, else 0 — what the
@@ -411,54 +408,85 @@ enum Conditions {
         return open ? 1 : 0
     }
 
-    /// Every daylight span from `from` to `through` that clears `goodScore`.
+    /// Every daylight run of good start times from `from` to `through`, slack-out and
+    /// slack-back runs found separately and merged in start order. A run can be a single
+    /// start time; that is still a swim.
     static func swimWindows(route: SwimRoute, samples: [CurrentSample],
-                            events: [CurrentEvent], forecast: [WeatherHour],
-                            from: Date, through: Date) -> [SwimWindow] {
+                            forecast: [WeatherHour], from: Date, through: Date) -> [SwimWindow] {
         guard through > from else { return [] }
         var windows: [SwimWindow] = []
-        var runStart: Date?
-        var time = from
 
-        func close(at end: Date) {
-            guard let start = runStart else { return }
-            runStart = nil
-            // Too short a run of start times is not a window worth walking down for.
-            guard end.timeIntervalSince(start) >= minWindow else { return }
-            windows.append(window(start: start, end: end, route: route, events: events))
-        }
+        for leg in [SlackLeg.out, .back] {
+            var runStart: Date?
+            var time = from
 
-        while time <= through {
-            let open = isDaylight(time)
-                && windowOpen(at: time, route: route, samples: samples, forecast: forecast)
-            if open, runStart == nil { runStart = time }
-            if !open { close(at: time.addingTimeInterval(-scanStep)) }
-            time.addTimeInterval(scanStep)
+            func close(at end: Date) {
+                guard let start = runStart else { return }
+                runStart = nil
+                windows.append(window(start: start, end: end, slackLeg: leg, samples: samples))
+            }
+
+            while time <= through {
+                let open = isDaylight(time)
+                    && windowOpen(at: time, route: route, slackLeg: leg, samples: samples,
+                                  forecast: forecast)
+                if open, runStart == nil { runStart = time }
+                if !open { close(at: time.addingTimeInterval(-scanStep)) }
+                time.addTimeInterval(scanStep)
+            }
+            close(at: through)
         }
-        close(at: through)
-        return windows
+        return windows.sorted { $0.start < $1.start }
     }
 
     /// The window a swimmer would walk down for next: the one still open, or the next
-    /// one to open. Scans the whole fetched range so a flat afternoon rolls to tomorrow.
-    static func nextWindow(route: SwimRoute, samples: [CurrentSample],
-                           events: [CurrentEvent], forecast: [WeatherHour],
-                           after now: Date) -> SwimWindow? {
-        guard let last = samples.last?.time else { return nil }
-        return swimWindows(route: route, samples: samples, events: events, forecast: forecast,
-                           from: calendar.startOfDay(for: now), through: last)
-            .first { $0.end > now }
+    /// one to open. `windows` is one route's, in start order, from `swimWindows`.
+    ///
+    /// Slack out is the one to recommend: a ride-out window with a slack-out partner right
+    /// behind it gives way to the partner. While the time is inside the two, the panel
+    /// shows both (see `windowPair`).
+    static func nextWindow(in windows: [SwimWindow], after now: Date) -> SwimWindow? {
+        windows.indices.first { i in
+            let window = windows[i]
+            guard window.end >= now else { return false }
+            return window.slackLeg == .out
+                || !windows[(i + 1)...].contains { partners(window, $0) }
+        }.map { windows[$0] }
     }
 
-    private static func window(start: Date, end: Date, route: SwimRoute,
-                               events: [CurrentEvent]) -> SwimWindow {
+    /// The pair round one slack whose swims `time` falls inside: from the first ride-out
+    /// start to the last slack-out finish, which is where the tide figure draws arrows.
+    static func windowPair(route: SwimRoute, in windows: [SwimWindow],
+                           at time: Date) -> WindowPair? {
+        zip(windows, windows.dropFirst())
+            .first { partners($0, $1) && $0.start <= time && time <= swimsEnd($1) }
+            .map { WindowPair(route: route, ride: $0, slack: $1) }
+    }
+
+    /// The last swim out of `window` back on the beach: its last start, plus out and back.
+    static func swimsEnd(_ window: SwimWindow) -> Date {
+        window.end.addingTimeInterval(2 * outLeg * 60)
+    }
+
+    /// A ride-out window and a slack-out one that starts before its swims are done.
+    private static func partners(_ ride: SwimWindow, _ slack: SwimWindow) -> Bool {
+        ride.slackLeg == .back && slack.slackLeg == .out && slack.start <= swimsEnd(ride)
+    }
+
+    /// Captioned with the current on the leg that is not slack, taken at its strongest for
+    /// a start in the middle of the window: `slack out, 0.6kt flood back`.
+    private static func window(start: Date, end: Date, slackLeg: SlackLeg,
+                               samples: [CurrentSample]) -> SwimWindow {
         let middle = start.addingTimeInterval(end.timeIntervalSince(start) / 2)
-        // The slack the window hangs off: the labelled one nearest its middle.
-        let slack = events.filter { $0.type == .slack }
-            .min { abs($0.time.timeIntervalSince(middle)) < abs($1.time.timeIntervalSince(middle)) }?
-            .time
-        return SwimWindow(start: start, end: end, slack: slack,
-                          current: route == .west ? "flood builds" : "ebb builds")
+        let leg = slackLeg == .out ? middle.addingTimeInterval(outLeg * 60) : middle
+        let peak = stride(from: 0.0, through: outLeg, by: 5)
+            .compactMap { velocity(at: leg.addingTimeInterval($0 * 60), in: samples) }
+            .max { abs($0) < abs($1) } ?? 0
+        let current = "\(oneDecimal(abs(peak)))kt \(peak < 0 ? "ebb" : "flood")"
+        return SwimWindow(start: start, end: end,
+                          caption: slackLeg == .out ? "slack out, \(current) back"
+                                                    : "\(current) out, slack back",
+                          slackLeg: slackLeg)
     }
 
     // MARK: - Clocks
@@ -469,12 +497,13 @@ enum Conditions {
         clock.string(from: time).lowercased()
     }
 
-    /// `9:30 – 11:00 AM`, the window itself. Printed in Didot. The meridiem is written
+    /// `9:30 – 11:00 AM`, the window itself, or `9:30 AM` when it is a single start. Printed in Didot. The meridiem is written
     /// once when both ends share it, and after each end when the window crosses noon.
     ///
     /// Hair spaces flank the dash — without them the headline's negative tracking pulls
     /// it flush into the digits on either side and the three strokes merge into one smear.
     static func span(_ window: SwimWindow) -> String {
+        if window.start == window.end { return clock.string(from: window.start) }
         let start = spanClock.string(from: window.start)
         let end = spanClock.string(from: window.end)
         let startPeriod = meridiem.string(from: window.start)

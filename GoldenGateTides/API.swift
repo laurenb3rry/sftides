@@ -14,8 +14,11 @@ enum APIError: LocalizedError {
 
 enum API {
     static let tideStation = "9414290"
-    static let currentStation = "SFB1203"
-    static let currentBin = 18
+    /// North Point, Pier 35 — a mile east of the cove, reading the alongshore flow a
+    /// swimmer feels. The Dolphin Club's own pick. No lag to apply: unlike the Gate, which
+    /// slacks 15–50 minutes after the opening, it runs on roughly the cove's clock.
+    static let currentStation = "SFB1205"
+    static let currentBin = 15
 
     /// 9414290's water temperature sensor is offline (mdapi reports `status: 0`),
     /// so this reads Richmond — the nearest in-bay station with a live sensor and

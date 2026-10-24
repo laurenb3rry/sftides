@@ -91,14 +91,23 @@ struct RouteVerdict {
     let isFavorable: Bool
 }
 
-/// A span where one of the two exposed routes reads favourably, with the slack it hangs
-/// off and a phrase for what the current is doing through it.
-struct SwimWindow: Identifiable {
+/// A run of good start times for one of the two exposed routes, with a phrase for which
+/// leg is slack and what runs on the other.
+struct SwimWindow: Identifiable, Equatable {
     let start: Date
     let end: Date
-    let slack: Date?
-    let current: String
+    /// `slack out, 0.6kt flood back` — which leg is slack, and what runs on the other.
+    let caption: String
+    let slackLeg: Conditions.SlackLeg
     var id: Date { start }
+}
+
+/// The two windows round one slack — ride out then slack back, and slack out then ride
+/// back — whose swims run together on the tide figure.
+struct WindowPair: Equatable {
+    let route: Conditions.SwimRoute
+    let ride: SwimWindow
+    let slack: SwimWindow
 }
 
 /// Curve and extremes share a fetch and a TTL, so they cache as one payload.

@@ -3,10 +3,10 @@ import SwiftUI
 /// The central bay, Golden Gate to Bay Bridge, with the water drawn moving through it.
 /// Ink weight is speed: on a hard flood or ebb the strokes are dark and heavy, and at
 /// slack the paper goes nearly blank, which is the moment worth swimming. Driven by the
-/// Gate's own current at whatever time the sheet is reading, so scrubbing the tide
+/// North Point current at whatever time the sheet is reading, so scrubbing the tide
 /// figure runs the bay along with it.
 struct CurrentsMap: View {
-    /// Signed knots at the Gate from `Conditions.velocity`, + flood. Nil holds the water still.
+    /// Signed knots at North Point from `Conditions.velocity`, + flood. Nil holds the water still.
     let knots: Double?
     /// Today's water temperature low and high, for the ends of the key. Nil leaves the key off.
     let water: (low: Double, high: Double)?
